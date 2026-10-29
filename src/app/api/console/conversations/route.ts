@@ -1,0 +1,28 @@
+import { db } from "@/lib/db";
+import { isResponse, json, requireUser } from "@/lib/api";
+import type { ConversationStatus } from "@/lib/types";
+import * as conversations from "@/services/conversations";
+
+const STATUSES: ConversationStatus[] = ["agent", "waiting_analyst", "with_analyst", "closed"];
+
+/** Lista de conversas para o console do analista, com nome do funcionário e última mensagem. */
+export async function GET(req: Request) {
+  const user = await requireUser("analyst");
+  if (isResponse(user)) return user;
+  const q = new URL(req.url).searchParams.get("status") as ConversationStatus | null;
+  const status = q && STATUSES.includes(q) ? q : undefined;
+  const employees = new Map(db().employees.map((e) => [e.id, e]));
+  const items = conversations.list(status).map((c) => ({
+    id: c.id,
+    status: c.status,
+    updatedAt: c.updatedAt,
+    employee: employees.get(c.employeeId)?.name ?? c.employeeId,
+    department: employees.get(c.employeeId)?.department ?? "",
+    transferReason: c.transferReason,
+    analystId: c.analystId,
+    summary: c.summary,
+    lastMessage: c.messages.at(-1)?.content ?? "",
+    messages: c.messages.length,
+  }));
+  return json({ conversations: items });
+}
