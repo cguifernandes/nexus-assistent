@@ -15,6 +15,8 @@ export interface ConversationItem {
   department: string;
   transferReason?: string;
   analystId?: string;
+  /** Passou por analista (transferida ou respondida por humano). */
+  hadAnalyst: boolean;
   ticketId?: string;
   lastConfidence?: number;
   lastMessage: string;
@@ -43,7 +45,7 @@ export function itemTag(c: ConversationItem, meId: string): { text: string; cls:
     case "with_analyst":
       return c.analystId === meId ? { text: "Você está atendendo", cls: "text-primary-text" } : { text: "Outro analista atendendo", cls: "text-ink-3" };
     case "closed":
-      return { text: "Encerrada", cls: "text-ink-3" };
+      return c.hadAnalyst ? { text: "Encerrada", cls: "text-ink-3" } : { text: "Resolvida pelo agent", cls: "text-ink-3" };
     default:
       return { text: "Agent atendendo", cls: "text-ink-3" };
   }

@@ -20,6 +20,7 @@ export async function GET(req: Request) {
     department: employees.get(c.employeeId)?.department ?? "",
     transferReason: c.transferReason,
     analystId: c.analystId,
+    hadAnalyst: c.messages.some((m) => m.role === "analyst") || !!c.analystId || !!c.transferReason,
     summary: c.summary,
     ticketId: c.ticketId,
     lastConfidence: [...c.messages].reverse().find((m) => m.trace?.decision)?.trace?.decision?.confidence,
