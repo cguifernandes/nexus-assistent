@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ConversationStatus, Employee } from "@/lib/types";
-import { Avatar, DotPill, NexoMark, api, shortWhen } from "./ui";
+import { AppShell } from "./AppShell";
+import { Avatar, DotPill, api, shortWhen } from "./ui";
 
 export interface ConversationItem {
   id: string;
@@ -50,13 +51,11 @@ export function itemTag(c: ConversationItem, meId: string): { text: string; cls:
 
 /** Layout do console: rail + lista de conversas à esquerda, conteúdo à direita. */
 export function ConsoleShell({ user, children }: { user: Employee; children: React.ReactNode }) {
-  const router = useRouter();
   const selectedId = usePathname().split("/")[2];
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [items, setItems] = useState<ConversationItem[]>();
   const [error, setError] = useState<string>();
-  const [menu, setMenu] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -88,67 +87,13 @@ export function ConsoleShell({ user, children }: { user: Employee; children: Rea
     .filter((i) => !q || `${i.employee} ${i.ticketId ?? ""} ${i.lastMessage}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <div className="flex h-dvh">
-      <aside className="flex w-16 shrink-0 flex-col items-center gap-1.5 border-r border-rule bg-desk py-4">
-        <div className="flex h-10 w-10 items-center justify-center pb-2">
-          <NexoMark size={22} />
-        </div>
-        <Link href="/console" className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-paper shadow-[0_1px_2px_rgba(27,36,49,.08)]" title="Conversas">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" />
-          </svg>
-          {counts.for_you > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-desk bg-cta px-1 text-[10px] font-bold text-white">{counts.for_you}</span>
-          )}
-        </Link>
-        <Link href="/chat" title="Meu atendimento" className="flex h-10 w-10 items-center justify-center rounded-xl text-ink-3 hover:bg-paper">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 21a8 8 0 0 1 16 0" />
-          </svg>
-        </Link>
-        <div className="flex-1" />
-        <div className="relative">
-          <button type="button" onClick={() => setMenu((m) => !m)} aria-haspopup="menu" aria-expanded={menu} title={user.name} className="rounded-full">
-            <Avatar name={user.name} size={36} online />
-          </button>
-          {menu && (
-            <>
-              <button type="button" aria-label="Fechar menu" onClick={() => setMenu(false)} className="fixed inset-0 z-10 cursor-default" />
-              <div role="menu" className="absolute bottom-0 left-12 z-20 w-60 rounded-xl border border-line-card bg-paper p-1.5 shadow-[0_8px_24px_-8px_rgba(27,36,49,.3)]">
-                <div className="flex items-center gap-2.5 px-2 pb-2 pt-1.5">
-                  <Avatar name={user.name} />
-                  <div className="min-w-0 leading-tight">
-                    <div className="truncate text-[13.5px] font-semibold">{user.name}</div>
-                    <div className="truncate text-[11.5px] text-ink-3">{user.email}</div>
-                  </div>
-                </div>
-                <div className="border-t border-rule pt-1.5">
-                  <MenuItem href="/perfil">Meu perfil</MenuItem>
-                  <MenuItem href="/chamados">Meu atendimento</MenuItem>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={async () => {
-                      await fetch("/api/auth", { method: "DELETE" });
-                      router.push("/login");
-                    }}
-                    className="flex h-9 w-full items-center rounded-lg px-2.5 text-left text-[13.5px] font-medium text-ink-2 hover:bg-desk"
-                  >
-                    Sair
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </aside>
+    <AppShell user={user} crumb="Console do analista" status={<DotPill tone="success">Disponível</DotPill>}>
+      <div className="flex min-h-0 flex-1">
 
-      <aside className="hidden w-[380px] shrink-0 flex-col border-r border-rule lg:flex">
+      <aside className="flex w-[340px] shrink-0 flex-col border-r border-rule">
         <div className="space-y-3 px-4 pb-2.5 pt-4">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">Conversas</h1>
-            <DotPill tone="success">Disponível</DotPill>
           </div>
           <label className="flex h-9 items-center gap-2.5 rounded-full bg-desk px-3 text-[13.5px]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-ink-3" aria-hidden="true">
@@ -201,14 +146,8 @@ export function ConsoleShell({ user, children }: { user: Employee; children: Rea
       </aside>
 
       <section className="flex min-w-0 flex-1 bg-desk-2">{children}</section>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
-function MenuItem({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} role="menuitem" className="flex h-9 items-center rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
-      {children}
-    </Link>
-  );
-}
