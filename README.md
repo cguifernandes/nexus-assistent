@@ -6,7 +6,7 @@ Chat em que o funcionário da Nexo descreve o problema com as próprias palavras
 
 ```bash
 npm install          # o .npmrc já aplica legacy-peer-deps (vitest 5 x @types/node 22)
-cp .env.example .env # preencha ANTHROPIC_API_KEY, SESSION_SECRET e ADMIN_PASSWORD
+cp .env.example .env # preencha ANTHROPIC_API_KEY e SESSION_SECRET
 npm run dev          # http://localhost:3000
 ```
 
@@ -19,7 +19,7 @@ Contas:
 | E-mail | Senha | Perfil |
 |---|---|---|
 | teste@nexo.com | `teste123` (hash scrypt no seed) | Funcionário sem chamados nem conversas |
-| admin@nexo.com | `ADMIN_PASSWORD` do `.env` | Analista do service desk (console) que também tem chamados de exemplo: um incidente vencido, um em andamento, uma requisição aprovada e dois resolvidos |
+| assistente@nexo.com | `assistente123` | Analista do service desk (console) que também tem chamados de exemplo: um incidente vencido, um em andamento, uma requisição aprovada e dois resolvidos |
 
 Os dados ficam em `data/db.json` (criado no primeiro acesso a partir de `src/lib/seed.ts`). Apague o arquivo para voltar ao estado inicial.
 
@@ -145,7 +145,6 @@ Configuração na Vercel:
 |---|---|
 | `ANTHROPIC_API_KEY` | chave `sk-ant-...` do Console da Anthropic (não a assinatura do Claude Code) |
 | `SESSION_SECRET` | string longa e aleatória; sem ela a aplicação não sobe em produção |
-| `ADMIN_PASSWORD` | senha da conta admin@nexo.com |
 | `TICKET_OUTAGE_RATE` | `0` ou `0.05`, para a instabilidade simulada não atrapalhar quem testa |
 
    Opcionais: `LLM_MODEL` (padrão `anthropic/claude-opus-5-5`; `anthropic/claude-haiku-5-5` é mais barato), `SESSION_TTL_SECONDS`, `AGENT_MSGS_PER_MINUTE`, `AGENT_MSGS_PER_DAY`.
@@ -155,4 +154,4 @@ Configuração na Vercel:
 
 Em plataformas com volume (Railway, Render, Fly.io) o mesmo código persiste de verdade: monte o volume e aponte `DATA_FILE` para ele.
 
-**Zerar os dados**: localmente, apague `data/db.json` e reinicie; na Vercel, um novo deploy (ou a reciclagem natural das funções) recria tudo a partir de `src/lib/seed.ts`, com as duas contas e os chamados de exemplo do admin.
+**Zerar os dados**: localmente, apague `data/db.json` e reinicie; na Vercel, um novo deploy (ou a reciclagem natural das funções) recria tudo a partir de `src/lib/seed.ts`, com as duas contas e os chamados de exemplo do assistente.

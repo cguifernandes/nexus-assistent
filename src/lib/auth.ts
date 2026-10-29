@@ -1,6 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { timingSafeEqual } from "node:crypto";
 import { db } from "./db";
 import { verifyPassword } from "./password";
 import type { Employee } from "./types";
@@ -75,14 +74,9 @@ export function findByEmail(email: string): Employee | undefined {
   return db().employees.find((x) => x.email === e);
 }
 
-/** Confere a senha: hash scrypt do seed ou, para contas sem hash, ADMIN_PASSWORD do .env. */
+/** Confere a senha contra o hash scrypt do seed. */
 export function checkPassword(user: Employee, password: string): boolean {
-  if (user.passwordHash) return verifyPassword(password, user.passwordHash);
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) return false;
-  const a = Buffer.from(password);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
+  return !!user.passwordHash && verifyPassword(password, user.passwordHash);
 }
 
 /** Versão do funcionário sem o hash de senha, para respostas da API. */

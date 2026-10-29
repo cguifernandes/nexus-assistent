@@ -6,8 +6,8 @@ import type { Priority } from "@/lib/types";
  */
 export interface EvalCase {
   name: string;
-  /** Quem manda a mensagem: "teste" (sem chamados) ou "admin" (com chamados de exemplo). */
-  as: "teste" | "admin";
+  /** Quem manda a mensagem: "teste" (sem chamados) ou "assistente" (com chamados de exemplo). */
+  as: "teste" | "assistente";
   message: string;
   /** Intenção esperada; com `intentIn`, qualquer uma da lista vale. */
   intent: string;
@@ -91,7 +91,7 @@ export const CASES: EvalCase[] = [
   },
   {
     name: "status sem número, vários chamados: pedir seleção",
-    as: "admin",
+    as: "assistente",
     message: "Como está meu chamado?",
     intent: "consulta_chamado",
     mustCall: ["listMyTickets", "showTickets"],
@@ -99,7 +99,7 @@ export const CASES: EvalCase[] = [
   },
   {
     name: "chamado vencido: oferecer ou fazer transferência",
-    as: "admin",
+    as: "assistente",
     message: "Meu chamado do notebook lento (INC-20311) está sem resposta há dias, o que houve?",
     intent: "consulta_chamado",
     mustCall: ["listMyTickets"],
@@ -108,7 +108,7 @@ export const CASES: EvalCase[] = [
   },
   {
     name: "sem duplicidade: complementar chamado aberto",
-    as: "admin",
+    as: "assistente",
     message: "Meu notebook continua lento depois da atualização do Windows, agora trava até no Outlook.",
     intent: "atualizar_chamado",
     mustNotCall: ["applyDraft"],
@@ -116,7 +116,7 @@ export const CASES: EvalCase[] = [
   },
   {
     name: "reabrir resolvido recente: checar duplicidade, não criar novo",
-    as: "admin",
+    as: "assistente",
     message: "O SAP bloqueou minha senha de novo, igual à semana passada.",
     intent: "atualizar_chamado",
     intentIn: ["atualizar_chamado", "abrir_chamado", "duvida"],

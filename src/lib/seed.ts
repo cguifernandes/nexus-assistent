@@ -5,8 +5,8 @@ import type { Conversation, Employee, Ticket } from "./types";
 const daysAgo = (d: number, h = 0): string => new Date(Date.now() - d * 864e5 - h * 36e5).toISOString();
 
 const employees: Employee[] = [
-  // Senha do admin: ADMIN_PASSWORD no .env (ver lib/auth.ts). Também é analista do service desk.
-  { id: "admin", name: "Admin Nexo", email: "admin@nexo.com", department: "TI · Service desk", role: "analyst" },
+  // Analista do service desk; também tem chamados de exemplo.
+  { id: "assistente", name: "Assistente Nexo", email: "assistente@nexo.com", department: "TI · Service desk", role: "analyst", passwordHash: hashPassword("assistente123") },
   { id: "teste", name: "Usuário Teste", email: "teste@nexo.com", department: "Operações", role: "employee", passwordHash: hashPassword("teste123") },
 ];
 
@@ -19,12 +19,12 @@ const tickets: Ticket[] = [
     category: "Hardware",
     priority: "Média",
     status: "Aguardando analista",
-    requesterId: "admin",
-    affected: "Admin Nexo",
+    requesterId: "assistente",
+    affected: "Assistente Nexo",
     createdAt: daysAgo(8),
     updatedAt: daysAgo(6),
     history: [
-      { at: daysAgo(8), by: "Admin Nexo", text: "Chamado aberto." },
+      { at: daysAgo(8), by: "Assistente Nexo", text: "Chamado aberto." },
       { at: daysAgo(6), by: "Diego Rocha", text: "Encaminhado para N2 para análise do disco." },
     ],
   },
@@ -36,12 +36,12 @@ const tickets: Ticket[] = [
     category: "Hardware",
     priority: "Baixa",
     status: "Aprovado",
-    requesterId: "admin",
-    affected: "Admin Nexo",
+    requesterId: "assistente",
+    affected: "Assistente Nexo",
     createdAt: daysAgo(9),
     updatedAt: daysAgo(7),
     history: [
-      { at: daysAgo(9), by: "Admin Nexo", text: "Requisição aberta." },
+      { at: daysAgo(9), by: "Assistente Nexo", text: "Requisição aberta." },
       { at: daysAgo(7), by: "Gestor", text: "Aprovado pelo gestor. Aguardando entrega." },
     ],
   },
@@ -53,13 +53,13 @@ const tickets: Ticket[] = [
     category: "Acesso",
     priority: "Média",
     status: "Resolvido",
-    requesterId: "admin",
-    affected: "Admin Nexo",
+    requesterId: "assistente",
+    affected: "Assistente Nexo",
     createdAt: daysAgo(5),
     updatedAt: daysAgo(4),
     resolvedAt: daysAgo(4),
     history: [
-      { at: daysAgo(5), by: "Admin Nexo", text: "Chamado aberto." },
+      { at: daysAgo(5), by: "Assistente Nexo", text: "Chamado aberto." },
       { at: daysAgo(4), by: "Elena Costa", text: "Usuário desbloqueado e senha temporária enviada." },
     ],
   },
@@ -71,12 +71,12 @@ const tickets: Ticket[] = [
     category: "Rede e VPN",
     priority: "Alta",
     status: "Em andamento",
-    requesterId: "admin",
-    affected: "Admin Nexo",
+    requesterId: "assistente",
+    affected: "Assistente Nexo",
     createdAt: daysAgo(0, 3),
     updatedAt: daysAgo(0, 2),
     history: [
-      { at: daysAgo(0, 3), by: "Admin Nexo", text: "Chamado aberto." },
+      { at: daysAgo(0, 3), by: "Assistente Nexo", text: "Chamado aberto." },
       { at: daysAgo(0, 2), by: "Diego Rocha", text: "Em análise: possível conflito com a atualização KB do Windows 11." },
     ],
   },
@@ -88,13 +88,13 @@ const tickets: Ticket[] = [
     category: "Software",
     priority: "Baixa",
     status: "Resolvido",
-    requesterId: "admin",
-    affected: "Admin Nexo",
+    requesterId: "assistente",
+    affected: "Assistente Nexo",
     createdAt: daysAgo(25),
     updatedAt: daysAgo(20),
     resolvedAt: daysAgo(20),
     history: [
-      { at: daysAgo(25), by: "Admin Nexo", text: "Requisição aberta." },
+      { at: daysAgo(25), by: "Assistente Nexo", text: "Requisição aberta." },
       { at: daysAgo(20), by: "Elena Costa", text: "Licença atribuída." },
     ],
   },
