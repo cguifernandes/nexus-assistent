@@ -4,8 +4,6 @@ Chat em que o funcionário da Nexo descreve o problema com as próprias palavras
 
 OBS: Tentei deixar o design o mais parecido com o documento porém adicionei algumas telas novas
 
-### Senha do usuário admin no vercel: admin123
-
 ## Como rodar
 
 ```bash
