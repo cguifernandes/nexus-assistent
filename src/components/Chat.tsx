@@ -6,7 +6,7 @@ import { MAX_USER_MESSAGES } from "@/lib/types";
 import type { AgentEvent } from "@/mastra/run";
 import { AppShell } from "./AppShell";
 import { MessageList, type Streaming } from "./Messages";
-import { StatusPill, api } from "./ui";
+import { DotPill, StatusPill, api } from "./ui";
 
 const SUGGESTIONS = ["Qual o status do meu chamado?", "Minha VPN dá erro 809", "Preciso de um segundo monitor", "Qual o horário do service desk?"];
 
@@ -15,13 +15,15 @@ export function Chat({ user }: { user: Employee }) {
   const [streaming, setStreaming] = useState<Streaming | null>(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string>();
+  const [agentReady, setAgentReady] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async (id?: string) => {
     const url = id ? `/api/conversations/${id}` : "/api/conversations";
-    const { conversation } = await api<{ conversation: Conversation }>(url);
-    setConv(conversation);
+    const data = await api<{ conversation: Conversation; agentReady: boolean }>(url);
+    setConv(data.conversation);
+    setAgentReady(data.agentReady);
   }, []);
 
   useEffect(() => {
@@ -128,10 +130,19 @@ export function Chat({ user }: { user: Employee }) {
       crumb="Atendimento"
       status={
         <>
-          <button type="button" onClick={newConversation} className="text-[13.5px] font-medium text-primary-text hover:underline">
+          <button type="button" onClick={newConversation} className="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-paper px-3 text-[13.5px] font-medium text-ink-2 hover:border-primary hover:bg-primary-soft hover:text-primary-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
             Nova conversa
           </button>
-          {conv && <StatusPill status={conv.status} />}
+          {conv && conv.status === "agent" && !agentReady ? (
+            <span title="O assistente não está disponível: a configuração do provedor de IA não está correta. Confira ANTHROPIC_API_KEY no .env e reinicie a aplicação." className="cursor-help">
+              <DotPill tone="danger">Assistente offline</DotPill>
+            </span>
+          ) : (
+            conv && <StatusPill status={conv.status} />
+          )}
         </>
       }
     >
