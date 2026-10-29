@@ -127,7 +127,7 @@ export function Chat({ user }: { user: Employee }) {
   return (
     <AppShell
       user={user}
-      crumb="Nexo Assist"
+      crumb="Atendimento"
       status={
         <>
           <button type="button" onClick={newConversation} className="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-paper px-3 text-[13.5px] font-medium text-ink-2 hover:border-primary hover:bg-primary-soft hover:text-primary-text">
