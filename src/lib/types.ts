@@ -125,6 +125,8 @@ export interface Conversation {
   /** Chamado principal desta conversa (criado, atualizado ou transferido aqui). */
   ticketId?: string;
   analystId?: string;
+  /** Última vez que o funcionário abriu a conversa; mensagens do analista depois disso são "novas". */
+  employeeSeenAt?: string;
   createdAt: string;
   updatedAt: string;
 }

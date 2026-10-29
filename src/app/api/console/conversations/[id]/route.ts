@@ -50,6 +50,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     case "close":
       conversations.setStatus(conv, "closed");
       conversations.addMessage(conv, { role: "system", content: `Conversa encerrada por ${user.name}.` });
+      // Encerrar o atendimento resolve o chamado da conversa (se o sistema legado responder).
+      if (conv.ticketId) {
+        await tickets.withRetry(() => tickets.resolve(conv.ticketId!, conv.employeeId, user.name, `Resolvido no atendimento com ${user.name}.`)).catch(() => undefined);
+      }
       break;
     case "message": {
       if (conv.status !== "with_analyst" || conv.analystId !== user.id) return json({ error: "Assuma a conversa antes de responder" }, 409);

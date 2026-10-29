@@ -76,9 +76,15 @@ export interface ConversationSummary {
   unreadFromAnalyst: number;
 }
 
+/** Registra que o funcionário viu a conversa agora. */
+export function markSeen(c: Conversation): void {
+  c.employeeSeenAt = now();
+  save();
+}
+
 export function summarize(c: Conversation): ConversationSummary {
-  const lastUserIdx = c.messages.map((m) => m.role).lastIndexOf("user");
-  const unread = c.messages.slice(lastUserIdx + 1).filter((m) => m.role === "analyst").length;
+  const seen = c.employeeSeenAt ?? "";
+  const unread = c.messages.filter((m) => m.role === "analyst" && m.at > seen).length;
   const last = c.messages.at(-1);
   return {
     id: c.id,

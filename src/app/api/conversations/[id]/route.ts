@@ -7,5 +7,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (isResponse(user)) return user;
   const agent = await agentHealth();
   const conv = conversations.getOwned((await params).id, user.id);
-  return conv ? json({ conversation: conv, agent }) : json({ error: "Conversa não encontrada" }, 404);
+  if (!conv) return json({ error: "Conversa não encontrada" }, 404);
+  conversations.markSeen(conv);
+  return json({ conversation: conv, agent });
 }

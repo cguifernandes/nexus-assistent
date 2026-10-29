@@ -24,7 +24,12 @@ export default async function ChamadosPage() {
   const closed = list?.filter((t) => !t.open) ?? [];
   const convs = conversations.listByEmployee(user.id).map(conversations.summarize);
   // Clicar num chamado abre a conversa ligada a ele, se houver. Resposta nova do analista = borda azul.
-  const convByTicket = new Map(convs.filter((c) => c.ticketId).map((c) => [c.ticketId!, c]));
+  const convByTicket = new Map<string, (typeof convs)[number]>();
+  for (const c of convs) {
+    if (!c.ticketId) continue;
+    const cur = convByTicket.get(c.ticketId);
+    if (!cur || (cur.status === "closed" && c.status !== "closed")) convByTicket.set(c.ticketId, c);
+  }
   const card = (t: TicketView) => {
     const conv = convByTicket.get(t.id);
     const unread = (conv?.unreadFromAnalyst ?? 0) > 0;

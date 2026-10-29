@@ -174,6 +174,19 @@ export function reopen(id: string, employeeId: string, by: string, text: string)
   return toView(t);
 }
 
+/** Marca o chamado como resolvido (ex.: analista encerrou o atendimento). */
+export function resolve(id: string, employeeId: string, by: string, text: string): TicketView {
+  const t = mustOwn(id, employeeId);
+  if (!toView(t).open) return toView(t);
+  const at = now();
+  t.status = "Resolvido";
+  t.resolvedAt = at;
+  t.history.push({ at, by, text });
+  t.updatedAt = at;
+  save();
+  return toView(t);
+}
+
 /** Transfere o chamado para a fila de analistas. */
 export function escalate(id: string, employeeId: string, note: string): TicketView {
   const t = mustOwn(id, employeeId);

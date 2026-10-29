@@ -10,7 +10,9 @@ export async function GET(req: Request) {
     return json({ conversations: conversations.listByEmployee(user.id).map(conversations.summarize) });
   }
   const agent = await agentHealth();
-  return json({ conversation: conversations.current(user.id), agent });
+  const conv = conversations.current(user.id);
+  conversations.markSeen(conv);
+  return json({ conversation: conv, agent });
 }
 
 export async function POST() {
