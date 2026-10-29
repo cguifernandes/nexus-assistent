@@ -75,7 +75,8 @@ function Row({ m, active, actions }: { m: Message; active: boolean; actions?: Bl
         </div>
       )}
       {m.blocks && (
-        <div className="max-w-[600px]">
+        // O card de rascunho ocupa a largura toda do chat; os demais seguem a largura do balão.
+        <div className={hasDraft ? "w-full" : "max-w-[600px]"}>
           <Blocks blocks={m.blocks.filter((b) => b.type !== "options")} active={active} actions={actions} />
         </div>
       )}
