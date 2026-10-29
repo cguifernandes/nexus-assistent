@@ -33,7 +33,7 @@ export function MessageList({
         <div className="space-y-1.5">
           <StatusLine live={streaming.steps} />
           <div className="max-w-[600px] rounded-[4px_12px_12px_12px] border border-rule bg-paper px-4 py-3 text-[14.5px]">
-            {streaming.text ? <Rich text={streaming.text} /> : <Spinner label={streaming.steps.at(-1) ?? "pensando…"} />}
+            {streaming.text ? <Rich text={streaming.text} /> : <Spinner label={streaming.steps.at(-1) ?? "Pensando…"} />}
             <Blocks blocks={streaming.blocks} active={false} />
           </div>
         </div>

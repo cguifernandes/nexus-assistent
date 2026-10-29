@@ -32,7 +32,7 @@ export function StatusLine({ trace, live, compact }: { trace?: Trace; live?: str
         ))}
         {trace && (
           <button type="button" onClick={() => setOpen((o) => !o)} className="text-primary-text hover:underline">
-            {open ? "ocultar detalhes" : "ver detalhes"}
+            {open ? "Ocultar detalhes" : "Ver detalhes"}
           </button>
         )}
       </div>

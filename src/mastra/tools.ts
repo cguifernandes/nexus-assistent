@@ -7,15 +7,15 @@ import * as conversations from "@/services/conversations";
 
 /** Rótulos mostrados acima da resposta ("consultou seus chamados"). */
 export const TOOL_LABELS: Record<string, string> = {
-  recordDecision: "classificou o pedido",
-  searchHelpCenter: "buscou na central de ajuda",
-  listMyTickets: "consultou seus chamados",
-  showTickets: "mostrou chamados",
-  findSimilarTickets: "verificou duplicidade",
-  proposeDraft: "montou um rascunho",
-  applyDraft: "registrou o chamado",
-  offerOptions: "ofereceu opções",
-  transferToAnalyst: "transferiu para um analista",
+  recordDecision: "Classificou o pedido",
+  searchHelpCenter: "Buscou na central de ajuda",
+  listMyTickets: "Consultou seus chamados",
+  showTickets: "Mostrou chamados",
+  findSimilarTickets: "Verificou duplicidade",
+  proposeDraft: "Montou um rascunho",
+  applyDraft: "Registrou o chamado",
+  offerOptions: "Ofereceu opções",
+  transferToAnalyst: "Transferiu para um analista",
 };
 
 /** Contexto injetado pelo runner em cada chamada (quem está falando, em qual conversa). */

@@ -152,7 +152,7 @@ export function Chat({ user }: { user: Employee }) {
             <p className="text-[13.5px] text-ink-3">Carregando…</p>
           ) : conv.messages.length === 0 ? (
             <div className="space-y-4 pt-10">
-              <h1 className="font-display text-[34px] leading-tight">Oi, {user.name.split(" ")[0]}. O que está acontecendo?</h1>
+              <h1 className="font-display text-[34px] leading-tight">O que está acontecendo?</h1>
               <p className="max-w-lg text-[14.5px] text-ink-3">
                 Descreva com suas palavras. Eu consulto seus chamados, busco na central de ajuda, abro ou atualizo chamados e chamo um
                 analista quando precisar.

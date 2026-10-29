@@ -38,6 +38,12 @@ body {
   height: 100%;
 }
 
+button:not(:disabled),
+[role="button"],
+summary {
+  cursor: pointer;
+}
+
 body {
   font-family: var(--font-sans);
   color: var(--color-ink);
