@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { isResponse, json, requireUser } from "@/lib/api";
+import { publicEmployee } from "@/lib/auth";
 import * as conversations from "@/services/conversations";
 import * as tickets from "@/services/tickets";
 
@@ -15,7 +16,7 @@ async function load(id: string) {
   } catch (e) {
     ticketsError = e instanceof Error ? e.message : "Erro ao consultar chamados";
   }
-  return { conversation: conv, employee, analyst, tickets: employeeTickets, ticketsError };
+  return { conversation: conv, employee: employee && publicEmployee(employee), analyst: analyst && publicEmployee(analyst), tickets: employeeTickets, ticketsError };
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {

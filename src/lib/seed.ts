@@ -1,14 +1,13 @@
 import type { DB } from "./db";
+import { hashPassword } from "./password";
 import type { Article, Conversation, Employee, Ticket } from "./types";
 
 const daysAgo = (d: number, h = 0): string => new Date(Date.now() - d * 864e5 - h * 36e5).toISOString();
 
 const employees: Employee[] = [
-  { id: "e1", name: "Ana Souza", email: "ana.souza@nexo.com", department: "Financeiro", role: "employee" },
-  { id: "e2", name: "Bruno Lima", email: "bruno.lima@nexo.com", department: "Vendas", role: "employee" },
-  { id: "e3", name: "Carla Mendes", email: "carla.mendes@nexo.com", department: "Marketing", role: "employee" },
-  { id: "a1", name: "Diego Rocha", email: "diego.rocha@nexo.com", department: "TI · Suporte N1", role: "analyst" },
-  { id: "a2", name: "Elena Costa", email: "elena.costa@nexo.com", department: "TI · Suporte N2", role: "analyst" },
+  // Senha do admin: ADMIN_PASSWORD no .env (ver lib/auth.ts). Também é analista do service desk.
+  { id: "admin", name: "Admin Nexo", email: "admin@nexo.com", department: "TI · Service desk", role: "analyst" },
+  { id: "teste", name: "Usuário Teste", email: "teste@nexo.com", department: "Operações", role: "employee", passwordHash: hashPassword("teste123") },
 ];
 
 const articles: Article[] = [
@@ -77,12 +76,12 @@ const tickets: Ticket[] = [
     category: "Hardware",
     priority: "Média",
     status: "Aguardando analista",
-    requesterId: "e1",
-    affected: "Ana Souza",
+    requesterId: "admin",
+    affected: "Admin Nexo",
     createdAt: daysAgo(8),
     updatedAt: daysAgo(6),
     history: [
-      { at: daysAgo(8), by: "Ana Souza", text: "Chamado aberto." },
+      { at: daysAgo(8), by: "Admin Nexo", text: "Chamado aberto." },
       { at: daysAgo(6), by: "Diego Rocha", text: "Encaminhado para N2 para análise do disco." },
     ],
   },
@@ -94,12 +93,12 @@ const tickets: Ticket[] = [
     category: "Hardware",
     priority: "Baixa",
     status: "Aprovado",
-    requesterId: "e1",
-    affected: "Ana Souza",
+    requesterId: "admin",
+    affected: "Admin Nexo",
     createdAt: daysAgo(9),
     updatedAt: daysAgo(7),
     history: [
-      { at: daysAgo(9), by: "Ana Souza", text: "Requisição aberta." },
+      { at: daysAgo(9), by: "Admin Nexo", text: "Requisição aberta." },
       { at: daysAgo(7), by: "Gestor", text: "Aprovado pelo gestor. Aguardando entrega." },
     ],
   },
@@ -111,13 +110,13 @@ const tickets: Ticket[] = [
     category: "Acesso",
     priority: "Média",
     status: "Resolvido",
-    requesterId: "e1",
-    affected: "Ana Souza",
+    requesterId: "admin",
+    affected: "Admin Nexo",
     createdAt: daysAgo(5),
     updatedAt: daysAgo(4),
     resolvedAt: daysAgo(4),
     history: [
-      { at: daysAgo(5), by: "Ana Souza", text: "Chamado aberto." },
+      { at: daysAgo(5), by: "Admin Nexo", text: "Chamado aberto." },
       { at: daysAgo(4), by: "Elena Costa", text: "Usuário desbloqueado e senha temporária enviada." },
     ],
   },
@@ -129,12 +128,12 @@ const tickets: Ticket[] = [
     category: "Rede e VPN",
     priority: "Alta",
     status: "Em andamento",
-    requesterId: "e2",
-    affected: "Bruno Lima",
+    requesterId: "admin",
+    affected: "Admin Nexo",
     createdAt: daysAgo(0, 3),
     updatedAt: daysAgo(0, 2),
     history: [
-      { at: daysAgo(0, 3), by: "Bruno Lima", text: "Chamado aberto." },
+      { at: daysAgo(0, 3), by: "Admin Nexo", text: "Chamado aberto." },
       { at: daysAgo(0, 2), by: "Diego Rocha", text: "Em análise: possível conflito com a atualização KB do Windows 11." },
     ],
   },
@@ -146,74 +145,20 @@ const tickets: Ticket[] = [
     category: "Software",
     priority: "Baixa",
     status: "Resolvido",
-    requesterId: "e2",
-    affected: "Bruno Lima",
+    requesterId: "admin",
+    affected: "Admin Nexo",
     createdAt: daysAgo(25),
     updatedAt: daysAgo(20),
     resolvedAt: daysAgo(20),
     history: [
-      { at: daysAgo(25), by: "Bruno Lima", text: "Requisição aberta." },
+      { at: daysAgo(25), by: "Admin Nexo", text: "Requisição aberta." },
       { at: daysAgo(20), by: "Elena Costa", text: "Licença atribuída." },
     ],
   },
-  {
-    id: "INC-20401",
-    type: "INC",
-    title: "Impressora do 3º andar sem toner",
-    description: "A impressora HP do 3º andar está sem toner desde ontem.",
-    category: "Hardware",
-    priority: "Baixa",
-    status: "Aberto",
-    requesterId: "e3",
-    affected: "Carla Mendes",
-    createdAt: daysAgo(1),
-    updatedAt: daysAgo(1),
-    history: [{ at: daysAgo(1), by: "Carla Mendes", text: "Chamado aberto." }],
-  },
 ];
 
-const conversations: Conversation[] = [
-  {
-    id: "c-seed-1",
-    employeeId: "e1",
-    status: "waiting_analyst",
-    createdAt: daysAgo(0, 1),
-    updatedAt: daysAgo(0, 1),
-    summary:
-      "Ana pergunta pelo INC-20311 (notebook lento), que está vencido há 6 dias aguardando analista. Pediu para falar com uma pessoa.",
-    transferReason: "chamado_vencido",
-    ticketId: "INC-20311",
-    drafts: [],
-    messages: [
-      { id: "m1", role: "user", content: "Oi, meu chamado do notebook lento ainda não teve resposta. Alguém pode olhar?", at: daysAgo(0, 1) },
-      {
-        id: "m2",
-        role: "assistant",
-        content:
-          "Encontrei o chamado INC-20311 (Notebook lento após atualização do Windows). Ele está aguardando analista há 6 dias e o prazo de 3 dias úteis já venceu. Vou transferir a conversa para um analista com o resumo do caso.",
-        at: daysAgo(0, 1),
-        trace: {
-          steps: [
-            { tool: "recordDecision", label: "classificou o pedido", args: { intent: "consulta_chamado", confidence: 0.9 }, result: { ok: true }, ms: 1 },
-            { tool: "listMyTickets", label: "consultou seus chamados", args: {}, result: { count: 3 }, ms: 120 },
-            { tool: "transferToAnalyst", label: "transferiu para um analista", args: { reason: "chamado_vencido" }, result: { ok: true }, ms: 5 },
-          ],
-          decision: {
-            intent: "consulta_chamado",
-            confidence: 0.9,
-            reasoning:
-              "A funcionária quer saber do chamado do notebook; o único chamado aberto compatível é o INC-20311, que está vencido. Regra: chamado vencido transfere para analista.",
-            plannedAction: "Mostrar o status e transferir.",
-          },
-          model: "seed",
-          durationMs: 1200,
-        },
-      },
-      { id: "m3", role: "system", content: "Conversa transferida para um analista (chamado vencido).", at: daysAgo(0, 1) },
-    ],
-  },
-];
+const conversations: Conversation[] = [];
 
 export function seed(): DB {
-  return { employees, articles, tickets, conversations, counters: { INC: 20401, REQ: 10460, conv: 1 } };
+  return { employees, articles, tickets, conversations, counters: { INC: 20390, REQ: 10460, conv: 0 } };
 }

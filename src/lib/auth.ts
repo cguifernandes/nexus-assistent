@@ -1,6 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { timingSafeEqual } from "node:crypto";
 import { db } from "./db";
+import { verifyPassword } from "./password";
 import type { Employee } from "./types";
 
 const COOKIE = "nexo_session";
@@ -71,4 +73,21 @@ export async function clearSessionCookie(): Promise<void> {
 export function findByEmail(email: string): Employee | undefined {
   const e = email.trim().toLowerCase();
   return db().employees.find((x) => x.email === e);
+}
+
+/** Confere a senha: hash scrypt do seed ou, para contas sem hash, ADMIN_PASSWORD do .env. */
+export function checkPassword(user: Employee, password: string): boolean {
+  if (user.passwordHash) return verifyPassword(password, user.passwordHash);
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) return false;
+  const a = Buffer.from(password);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Versão do funcionário sem o hash de senha, para respostas da API. */
+export function publicEmployee(e: Employee): Omit<Employee, "passwordHash"> {
+  const copy = { ...e };
+  delete copy.passwordHash;
+  return copy;
 }

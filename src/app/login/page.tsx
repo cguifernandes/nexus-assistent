@@ -13,7 +13,10 @@ const schema = z.object({
     .trim()
     .min(1, "Informe seu e-mail corporativo")
     .email("E-mail inválido")
-    .refine((e) => e.toLowerCase().endsWith("@nexo.com"), "Use seu e-mail @nexo.com"),
+    .refine(
+      (e) => e.toLowerCase().endsWith("@nexo.com"),
+      "Use seu e-mail @nexo.com",
+    ),
   password: z.string().min(1, "Informe sua senha"),
 });
 type Form = z.infer<typeof schema>;
@@ -26,7 +29,10 @@ export default function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
+  } = useForm<Form>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
+  });
 
   async function submit(values: Form) {
     const res = await fetch("/api/auth", {
@@ -34,8 +40,14 @@ export default function LoginPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
-    const data = (await res.json()) as { error?: string; user?: { role: string } };
-    if (!res.ok || !data.user) return setError("root", { message: data.error ?? "Não foi possível entrar" });
+    const data = (await res.json()) as {
+      error?: string;
+      user?: { role: string };
+    };
+    if (!res.ok || !data.user)
+      return setError("root", {
+        message: data.error ?? "Não foi possível entrar",
+      });
     router.push(data.user.role === "analyst" ? "/console" : "/chat");
   }
 
@@ -48,35 +60,49 @@ export default function LoginPage() {
       <section className="hidden w-[55%] max-w-[800px] flex-col justify-between bg-ink px-16 pb-12 pt-10 text-white lg:flex">
         <div className="flex items-center gap-2.5">
           <NexoMark size={24} color="#FFFFFF" />
-          <span className="text-[17px] font-bold tracking-tight">Nexo Assist</span>
+          <span className="text-[17px] font-bold tracking-tight">
+            Nexo Assist
+          </span>
         </div>
 
         <div className="space-y-9">
           <div className="space-y-4">
-            <p className="text-[13.5px] font-medium text-white/55">Service desk de TI da Nexo</p>
-            <h1 className="font-display text-[54px] leading-[1.05] tracking-tight">Seu problema de TI, resolvido em uma conversa.</h1>
+            <p className="text-[13.5px] font-medium text-white/55">
+              Service desk de TI da Nexo
+            </p>
+            <h1 className="font-display text-[54px] leading-[1.05] tracking-tight">
+              Seu problema de TI, resolvido em uma conversa.
+            </h1>
             <p className="max-w-xl text-base text-white/65">
-              Descreva o que está acontecendo. O assistente consulta seus chamados, busca na central de ajuda e chama um analista quando
+              Descreva o que está acontecendo. O assistente consulta seus
+              chamados, busca na central de ajuda e chama um analista quando
               precisa.
             </p>
           </div>
 
           <div className="ml-24 w-[500px] max-w-full space-y-2.5 rounded-2xl border border-white/8 bg-white/4 p-[18px]">
             <div className="flex justify-end">
-              <div className="rounded-[12px_12px_4px_12px] bg-paper px-3.5 py-2 text-[13.5px] text-ink">Meu notebook não conecta na VPN. Erro 809.</div>
+              <div className="rounded-[12px_12px_4px_12px] bg-paper px-3.5 py-2 text-[13.5px] text-ink">
+                Meu notebook não conecta na VPN. Erro 809.
+              </div>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-[12.5px]">
                 <span className="font-semibold text-white/80">Nexo Assist</span>
-                <span className="text-white/45">consultou seus chamados · criou um chamado</span>
+                <span className="text-white/45">
+                  consultou seus chamados · criou um chamado
+                </span>
               </div>
               <div className="max-w-[380px] rounded-[4px_12px_12px_12px] bg-white/8 px-3.5 py-2.5 text-[13.5px]">
-                Pronto: abri o chamado com prioridade alta. Um analista fala com você em até 4 h úteis.
+                Pronto: abri o chamado com prioridade alta. Um analista fala com
+                você em até 4 h úteis.
               </div>
               <div className="inline-flex items-center gap-2 rounded-xl bg-paper px-3 py-[7px] text-[12.5px]">
                 <span className="h-1.5 w-1.5 rounded-full bg-warning" />
                 <span className="font-semibold text-ink">INC-20517</span>
-                <span className="text-ink-3">Rede e VPN · Alta · em até 4 h</span>
+                <span className="text-ink-3">
+                  Rede e VPN · Alta · em até 4 h
+                </span>
               </div>
             </div>
           </div>
@@ -99,24 +125,46 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-          <form onSubmit={handleSubmit(submit)} noValidate className="w-[380px] max-w-full space-y-7">
+          <form
+            onSubmit={handleSubmit(submit)}
+            noValidate
+            className="w-[380px] max-w-full space-y-7"
+          >
             <div className="flex items-center gap-2.5 lg:hidden">
               <NexoMark size={22} />
               <span className="text-base font-bold">Nexo Assist</span>
             </div>
             <div className="space-y-2">
               <h2 className="font-display text-[40px] leading-none">Entrar</h2>
-              <p className="text-[15.5px] text-ink-3">Use seu e-mail corporativo e a senha da rede Nexo.</p>
+              <p className="text-[15.5px] text-ink-3">
+                Use seu e-mail corporativo e a senha da rede Nexo.
+              </p>
             </div>
 
             <div className="flex flex-col gap-6">
               <label className="flex flex-col gap-2">
-                <span className="text-[13.5px] font-medium">E-mail corporativo</span>
-                <span className="relative block">
-                  <Icon name="mail" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" />
-                  <input type="email" autoFocus placeholder="E-mail" aria-invalid={!!errors.email} className={`${input} ${errors.email ? "border-danger" : ""}`} {...register("email")} />
+                <span className="text-[13.5px] font-medium">
+                  E-mail corporativo
                 </span>
-                {errors.email && <span className="text-[12.5px] text-danger-text">{errors.email.message}</span>}
+                <span className="relative block">
+                  <Icon
+                    name="mail"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3"
+                  />
+                  <input
+                    type="email"
+                    autoFocus
+                    placeholder="E-mail"
+                    aria-invalid={!!errors.email}
+                    className={`${input} ${errors.email ? "border-danger" : ""}`}
+                    {...register("email")}
+                  />
+                </span>
+                {errors.email && (
+                  <span className="text-[12.5px] text-danger-text">
+                    {errors.email.message}
+                  </span>
+                )}
               </label>
               <label className="flex flex-col gap-2">
                 <span className="flex items-center justify-between text-[13.5px] font-medium">
@@ -126,16 +174,38 @@ export default function LoginPage() {
                   </a>
                 </span>
                 <span className="relative block">
-                  <Icon name="lock" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-text" />
-                  <input type={show ? "text" : "password"} placeholder="Sua senha" aria-invalid={!!errors.password} className={`${input} pr-11 ${errors.password ? "border-danger" : ""}`} {...register("password")} />
-                  <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Ocultar senha" : "Mostrar senha"} className="absolute right-2 top-1/2 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-md text-ink-3 hover:bg-desk">
+                  <Icon
+                    name="lock"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-text"
+                  />
+                  <input
+                    type={show ? "text" : "password"}
+                    placeholder="Sua senha"
+                    aria-invalid={!!errors.password}
+                    className={`${input} pr-11 ${errors.password ? "border-danger" : ""}`}
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShow((s) => !s)}
+                    aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+                    className="absolute right-2 top-1/2 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-md text-ink-3 hover:bg-desk"
+                  >
                     <Icon name={show ? "eye-off" : "eye"} />
                   </button>
                 </span>
-                {errors.password && <span className="text-[12.5px] text-danger-text">{errors.password.message}</span>}
+                {errors.password && (
+                  <span className="text-[12.5px] text-danger-text">
+                    {errors.password.message}
+                  </span>
+                )}
               </label>
               <label className="flex items-center gap-2.5 pt-0.5 text-[13.5px] text-ink-2">
-                <input type="checkbox" defaultChecked className="h-[18px] w-[18px] rounded-md accent-cta" />
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  className="h-[18px] w-[18px] rounded-md accent-cta"
+                />
                 Manter conectado neste computador
               </label>
             </div>
@@ -146,11 +216,14 @@ export default function LoginPage() {
               </p>
             )}
 
-            <button type="submit" disabled={isSubmitting} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-cta text-[15.5px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,.12),0_6px_16px_-6px_rgba(0,98,196,.5)] hover:bg-cta-hover disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-cta text-[15.5px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,.12),0_6px_16px_-6px_rgba(0,98,196,.5)] hover:bg-cta-hover disabled:opacity-60"
+            >
               {isSubmitting ? "Entrando…" : "Entrar"}
               {!isSubmitting && <Icon name="arrow" />}
             </button>
-
           </form>
         </div>
 
@@ -163,9 +236,21 @@ export default function LoginPage() {
   );
 }
 
-function Stat({ value, label, border, live }: { value: string; label: string; border?: boolean; live?: boolean }) {
+function Stat({
+  value,
+  label,
+  border,
+  live,
+}: {
+  value: string;
+  label: string;
+  border?: boolean;
+  live?: boolean;
+}) {
   return (
-    <div className={`flex-1 space-y-1.5 ${border ? "border-l border-white/10 pl-6" : ""}`}>
+    <div
+      className={`flex-1 space-y-1.5 ${border ? "border-l border-white/10 pl-6" : ""}`}
+    >
       <div className="flex items-center gap-2">
         <span className="font-display text-[34px] leading-none">{value}</span>
         {live && <span className="h-2 w-2 rounded-full bg-success" />}
@@ -175,7 +260,13 @@ function Stat({ value, label, border, live }: { value: string; label: string; bo
   );
 }
 
-export function Icon({ name, className = "" }: { name: "mail" | "lock" | "eye" | "eye-off" | "arrow"; className?: string }) {
+export function Icon({
+  name,
+  className = "",
+}: {
+  name: "mail" | "lock" | "eye" | "eye-off" | "arrow";
+  className?: string;
+}) {
   const paths: Record<typeof name, React.ReactNode> = {
     mail: (
       <>
@@ -203,7 +294,18 @@ export function Icon({ name, className = "" }: { name: "mail" | "lock" | "eye" |
     arrow: <path d="M5 12h14m-6-6 6 6-6 6" />,
   };
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       {paths[name]}
     </svg>
   );

@@ -4,6 +4,7 @@ import { seed } from "@/lib/seed";
 import * as tickets from "@/services/tickets";
 import * as helpcenter from "@/services/helpcenter";
 import { signSession, verifySession } from "@/lib/auth";
+import { hashPassword, verifyPassword } from "@/lib/password";
 
 process.env.TICKET_OUTAGE_RATE = "0";
 
@@ -18,33 +19,33 @@ describe("regras de prazo", () => {
   });
 
   it("marca chamado aberto há 6 dias com prioridade média como vencido", () => {
-    const v = tickets.getForEmployee("INC-20311", "e1");
+    const v = tickets.getForEmployee("INC-20311", "admin");
     expect(v?.overdue).toBe(true);
     expect(v?.slaLabel).toBe("3 dias úteis");
   });
 
   it("chamado resolvido há 4 dias pode ser reaberto; há 20 dias não", () => {
-    expect(tickets.getForEmployee("INC-20150", "e1")?.reopenable).toBe(true);
-    expect(tickets.getForEmployee("REQ-10460", "e2")?.reopenable).toBe(false);
+    expect(tickets.getForEmployee("INC-20150", "admin")?.reopenable).toBe(true);
+    expect(tickets.getForEmployee("REQ-10460", "admin")?.reopenable).toBe(false);
   });
 });
 
 describe("privacidade", () => {
   it("não devolve chamado de outro funcionário", () => {
-    expect(tickets.getForEmployee("INC-20311", "e2")).toBeUndefined();
-    expect(tickets.listByEmployee("e3").map((t) => t.id)).toEqual(["INC-20401"]);
-    expect(() => tickets.addComment("INC-20311", "e2", "Bruno", "x")).toThrow();
+    expect(tickets.getForEmployee("INC-20311", "teste")).toBeUndefined();
+    expect(tickets.listByEmployee("teste")).toEqual([]);
+    expect(() => tickets.addComment("INC-20311", "teste", "Teste", "x")).toThrow();
   });
 });
 
 describe("duplicidade", () => {
   it("encontra chamado aberto parecido", () => {
-    const m = tickets.findSimilar("e1", "meu notebook continua lento depois da atualização do windows");
+    const m = tickets.findSimilar("admin", "meu notebook continua lento depois da atualização do windows");
     expect(m[0]?.ticket.id).toBe("INC-20311");
   });
 
   it("não aponta duplicado para assunto diferente", () => {
-    expect(tickets.findSimilar("e1", "impressora sem toner no segundo andar")).toEqual([]);
+    expect(tickets.findSimilar("admin", "impressora sem toner no segundo andar")).toEqual([]);
   });
 });
 
@@ -56,9 +57,9 @@ describe("criação e reabertura", () => {
       description: "Teclado com teclas falhando",
       category: "Hardware",
       priority: "Baixa",
-      affected: "Carla Mendes",
-      requesterId: "e3",
-      requesterName: "Carla Mendes",
+      affected: "Usuário Teste",
+      requesterId: "teste",
+      requesterName: "Usuário Teste",
     });
     expect(t.id).toBe("REQ-10461");
     expect(t.status).toBe("Aberto");
@@ -66,8 +67,8 @@ describe("criação e reabertura", () => {
   });
 
   it("reabre resolvido recente e recusa resolvido antigo", () => {
-    expect(tickets.reopen("INC-20150", "e1", "Ana", "bloqueou de novo").status).toBe("Aberto");
-    expect(() => tickets.reopen("REQ-10460", "e2", "Bruno", "x")).toThrow(/7 dias/);
+    expect(tickets.reopen("INC-20150", "admin", "Admin", "bloqueou de novo").status).toBe("Aberto");
+    expect(() => tickets.reopen("REQ-10460", "admin", "Admin", "x")).toThrow(/7 dias/);
   });
 });
 
@@ -97,12 +98,22 @@ describe("central de ajuda", () => {
 
 describe("sessão JWT", () => {
   it("aceita token válido e rejeita adulterado ou vencido", async () => {
-    const tok = await signSession("e1");
-    expect((await verifySession(tok))?.employeeId).toBe("e1");
+    const tok = await signSession("teste");
+    expect((await verifySession(tok))?.employeeId).toBe("teste");
     const [h, , sig] = tok.split(".");
-    const forged = Buffer.from(JSON.stringify({ sub: "a1", exp: 9e9 })).toString("base64url");
+    const forged = Buffer.from(JSON.stringify({ sub: "admin", exp: 9e9 })).toString("base64url");
     expect(await verifySession(`${h}.${forged}.${sig}`)).toBeUndefined();
-    expect(await verifySession(await signSession("e1", -10))).toBeUndefined();
+    expect(await verifySession(await signSession("teste", -10))).toBeUndefined();
     expect(await verifySession(undefined)).toBeUndefined();
+  });
+});
+
+describe("senha", () => {
+  it("hash scrypt confere a senha certa e rejeita a errada", () => {
+    const h = hashPassword("teste123");
+    expect(h).not.toContain("teste123");
+    expect(verifyPassword("teste123", h)).toBe(true);
+    expect(verifyPassword("teste124", h)).toBe(false);
+    expect(verifyPassword("x", "lixo")).toBe(false);
   });
 });

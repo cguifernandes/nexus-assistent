@@ -6,6 +6,8 @@ export interface Employee {
   email: string;
   department: string;
   role: Role;
+  /** Hash scrypt "salt:hash". Ausente = senha vem de ADMIN_PASSWORD no .env. */
+  passwordHash?: string;
 }
 
 export const TICKET_TYPES = ["INC", "REQ"] as const;

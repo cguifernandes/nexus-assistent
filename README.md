@@ -12,14 +12,12 @@ npm run dev                      # http://localhost:3000
 
 Outros comandos: `npm test` (vitest), `npm run typecheck`, `npm run lint`, `npm run build && npm start`.
 
-Contas de exemplo (qualquer senha; a tela de login não as lista):
+Contas:
 
-| E-mail | Perfil |
-|---|---|
-| ana.souza@nexo.com | Funcionária com 3 chamados (um vencido, um aprovado, um resolvido há 4 dias) e uma conversa já transferida |
-| bruno.lima@nexo.com | Funcionário com incidente de VPN em andamento |
-| carla.mendes@nexo.com | Funcionária com um chamado aberto |
-| diego.rocha@nexo.com, elena.costa@nexo.com | Analistas (abrem o console em `/console`) |
+| E-mail | Senha | Perfil |
+|---|---|---|
+| teste@nexo.com | `teste123` (hash scrypt no seed) | Funcionário sem chamados nem conversas |
+| admin@nexo.com | `ADMIN_PASSWORD` do `.env` | Analista do service desk (console) que também tem chamados de exemplo: um incidente vencido, uma requisição aprovada e dois resolvidos |
 
 Os dados ficam em `data/db.json` (criado no primeiro acesso a partir de `src/lib/seed.ts`). Apague o arquivo para voltar ao estado inicial.
 

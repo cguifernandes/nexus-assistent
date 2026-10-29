@@ -99,6 +99,12 @@ export function ConsoleShell({ user, selectedId, children }: { user: Employee; s
             <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-desk bg-cta px-1 text-[10px] font-bold text-white">{counts.for_you}</span>
           )}
         </Link>
+        <Link href="/chat" title="Meu atendimento" className="flex h-10 w-10 items-center justify-center rounded-xl text-ink-3 hover:bg-paper">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+          </svg>
+        </Link>
         <div className="flex-1" />
         <button
           type="button"
