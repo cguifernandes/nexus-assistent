@@ -5,6 +5,8 @@ import { runAgent, type AgentEvent } from "@/mastra/run";
 import { checkAgentRate } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
+/** Um turno do agent leva ~5–15 s; na Vercel o padrão de 10 s cortaria o stream. */
+export const maxDuration = 60;
 
 /**
  * Envia uma mensagem do funcionário. Se a conversa está com o agent, responde em SSE

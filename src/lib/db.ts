@@ -10,7 +10,9 @@ export interface DB {
   counters: { INC: number; REQ: number; conv: number };
 }
 
-const FILE = path.resolve(process.env.DATA_FILE ?? path.join(process.cwd(), "data", "db.json"));
+// Na Vercel o projeto é somente leitura; só /tmp aceita escrita (e some quando a função recicla).
+const DEFAULT_FILE = process.env.VERCEL ? "/tmp/nexo-db.json" : path.join(process.cwd(), "data", "db.json");
+const FILE = path.resolve(process.env.DATA_FILE ?? DEFAULT_FILE);
 
 // ponytail: single JSON file, written whole on every mutation. Fine for one process;
 // swap for SQLite/Postgres when there is more than one instance or >10k tickets.

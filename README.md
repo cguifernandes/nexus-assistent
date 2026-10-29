@@ -5,19 +5,21 @@ Chat em que o funcionário da Nexo descreve o problema com as próprias palavras
 ## Como rodar
 
 ```bash
-npm install --legacy-peer-deps   # vitest 5 ainda não declara o @types/node 22 como compatível
-cp .env.example .env             # preencha ANTHROPIC_API_KEY
-npm run dev                      # http://localhost:3000
+npm install          # o .npmrc já aplica legacy-peer-deps (vitest 5 x @types/node 22)
+cp .env.example .env # preencha ANTHROPIC_API_KEY, SESSION_SECRET e ADMIN_PASSWORD
+npm run dev          # http://localhost:3000
 ```
 
-Outros comandos: `npm test` (vitest), `npm run typecheck`, `npm run lint`, `npm run build && npm start`.
+Requer Node 22.
+
+Outros comandos: `npm test` (unitários), `npm run eval` (avaliação do agent contra o modelo, gasta tokens), `npm run typecheck`, `npm run lint`, `npm run build && npm start`.
 
 Contas:
 
 | E-mail | Senha | Perfil |
 |---|---|---|
 | teste@nexo.com | `teste123` (hash scrypt no seed) | Funcionário sem chamados nem conversas |
-| admin@nexo.com | `ADMIN_PASSWORD` do `.env` | Analista do service desk (console) que também tem chamados de exemplo: um incidente vencido, uma requisição aprovada e dois resolvidos |
+| admin@nexo.com | `ADMIN_PASSWORD` do `.env` | Analista do service desk (console) que também tem chamados de exemplo: um incidente vencido, um em andamento, uma requisição aprovada e dois resolvidos |
 
 Os dados ficam em `data/db.json` (criado no primeiro acesso a partir de `src/lib/seed.ts`). Apague o arquivo para voltar ao estado inicial.
 
@@ -27,20 +29,24 @@ Os dados ficam em `data/db.json` (criado no primeiro acesso a partir de `src/lib
 src/
   app/            Next.js (App Router): telas + rotas de API
     login/        Tela 1
-    chat/         Telas 2 e 3 (funcionário)
-    console/      Telas 4 e 5 (analista)
+    tickets/      Atendimento: chamados e conversas do funcionário
+    chat/         Telas 2 e 3 (chat com o agent)
+    profile/      Meu perfil
+    console/      Telas 4 e 5 (analista); o shell fica no layout e persiste entre conversas
     api/          auth, conversations (SSE), console
-  components/     UI (Chat, Messages, Blocks, Trace, Console*)
+  components/     UI (AppShell, Chat, Messages, Blocks, Trace, Console*)
   mastra/         O agent
-    agent.ts      instruções (regras do Anexo A) + modelo
+    agent.ts      instruções (regras do Anexo A, exemplos, segurança) + modelo
     tools.ts      ferramentas que o agent pode chamar
     run.ts        roda um turno, transforma o stream em eventos e grava o trace
+    ready.ts      verifica se a chave do provedor é aceita (badge online/offline)
   services/       Serviços de domínio, sem nada de LLM
     tickets.ts    serviço de chamados simulado (instável de propósito)
     helpcenter.ts busca na central de ajuda
-    conversations.ts conversas, status e rascunhos
-  lib/            tipos, persistência (JSON), sessão assinada, seed
-tests/            vitest
+    conversations.ts conversas, status, rascunhos e "visto"
+  lib/            tipos, persistência (JSON), JWT de sessão, senha (scrypt), rate limit, artigos, seed
+tests/            unitários (vitest)
+evals/            avaliação do agent contra o modelo
 ```
 
 Três camadas, cada uma só fala com a de baixo:
@@ -83,8 +89,8 @@ As regras que importam não dependem só do prompt; estão também no código:
 
 Cada resposta do agent carrega um `trace` persistido com a mensagem:
 
-- **Chips acima da resposta**: um por ação (“classificou o pedido”, “consultou seus chamados”, “verificou duplicidade”, “montou um rascunho”, “transferiu para um analista”). Aparecem em tempo real, conforme o agent chama as ferramentas.
-- **“ver detalhes”** abre: o que o agent entendeu (intenção), a segurança (barra 0–100%), o porquê e a ação planejada; a lista de ferramentas chamadas com argumentos, resultado e duração; e modelo, tempo total e tokens de entrada/saída.
+- **Linha de ações acima da resposta**: uma por ferramenta (“Classificou o pedido”, “Consultou seus chamados”, “Verificou duplicidade”, “Montou um rascunho”, “Transferiu para um analista”). Aparece em tempo real, conforme o agent chama as ferramentas.
+- **“Ver detalhes”** abre: o que o agent entendeu (intenção), a segurança (barra 0–100%), o porquê e a ação planejada; a lista de ferramentas chamadas com argumentos, resultado e duração; e modelo, tempo total e tokens de entrada/saída.
 
 O mesmo trace aparece no console do analista, que também vê o resumo que o agent escreveu ao transferir e o motivo (pedido do funcionário, caso crítico, chamado vencido, sem segurança).
 
@@ -96,12 +102,12 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 - **Exemplos no prompt**: além das regras, as instruções trazem nove exemplos curtos de condução (dúvida, VPN no Windows 11, equipamento, crítico, consulta com vários chamados, analista, RH, reabertura, mensagem vaga).
 - **Central de ajuda** com 20 artigos em `src/lib/articles.ts`, com sinônimos nas tags porque a busca é por palavras. Conteúdo estático, fora do `db.json`.
 - **Testes** (`tests/tickets.test.ts`) nas regras determinísticas: horas úteis, vencimento, reabertura, privacidade, duplicidade, retry do legado, busca da central de ajuda, assinatura da sessão.
-- **Dados de exemplo com casos de borda**: chamado vencido, resolvido há 4 dias (reabrível) e há 20 dias (não), VPN 809 em Windows 11 (artigo manda abrir chamado), conversa já transferida para o console não começar vazio.
+- **Dados de exemplo com casos de borda**: chamado vencido, resolvido há 4 dias (reabrível) e há 20 dias (não), VPN 809 em Windows 11 (artigo manda abrir chamado).
 - **Trace em toda resposta**: o avaliador vê exatamente por que o agent fez o que fez, e eu usei isso para ajustar as instruções.
 
 ## Trade-offs
 
-- **JSON em disco em vez de banco.** Atende “sobreviver a reinício” com zero dependências; não serve para mais de um processo nem para deploy em plataforma com disco efêmero. Trocar por SQLite/Postgres é mexer só em `lib/db.ts`.
+- **JSON em disco em vez de banco.** Atende “sobreviver a reinício” com zero dependências; não serve para mais de um processo nem para disco efêmero (ver Deploy). Trocar por SQLite/Postgres é mexer só em `lib/db.ts`.
 - **Serviço de chamados em processo, não um servidor separado.** A fronteira é um módulo com API própria e simulação de indisponibilidade; virar um HTTP service é só trocar a implementação das funções. Evita rodar dois processos para avaliar.
 - **Polling para o analista, SSE só para o agent.** Simples e suficiente para o volume do protótipo; WebSocket/SSE bidirecional seria o próximo passo.
 - **Histórico só de texto.** Cards e resultados de ferramentas não voltam para o modelo (economia de tokens). O rascunho pendente é reinjetado no contexto para o agent saber o que está esperando confirmação.
@@ -115,7 +121,7 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 - Streaming bidirecional (WebSocket) para analista e funcionário, com indicador de “digitando”.
 - Edição do rascunho em formulário, além do ajuste por texto.
 - Banco relacional, migrações e um serviço de chamados HTTP de verdade com contrato OpenAPI.
-- Rate limiting por usuário e orçamento de tokens por conversa, obrigatórios antes de um deploy público.
+- Orçamento de tokens por conversa e limites compartilhados (Redis) para rodar com mais de uma instância.
 - Busca semântica (embeddings) na central de ajuda.
 
 ## Segurança do agent
@@ -125,24 +131,28 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 
 ## Deploy
 
-A aplicação guarda tudo em um arquivo JSON, então precisa de **disco persistente**. Railway, Render e Fly.io têm volumes; na Vercel o disco é efêmero e os dados somem a cada deploy (lá seria preciso trocar `lib/db.ts` por um banco).
+Publicado na **Vercel**, só para avaliação. Dois cuidados por causa do armazenamento em arquivo:
 
-Passo a passo (Railway ou Render, com Node 22):
+- Na Vercel o sistema de arquivos do projeto é somente leitura, então o `db.json` vai para `/tmp` (automático quando a variável `VERCEL` existe). Esse disco é por instância da função e some quando ela recicla: **os dados podem ser zerados a qualquer momento**, e duas instâncias podem ver dados diferentes. Para o teste da vaga isso é aceitável; para uso real, trocar `lib/db.ts` por um banco (Vercel Postgres, Turso etc.).
+- Os limites por usuário e o cache da verificação da chave também são por instância.
 
-1. Crie o serviço a partir do repositório. Build: `npm ci && npm run build`. Start: `npm start`. O `.npmrc` do projeto já usa `legacy-peer-deps`, necessário para o vitest.
-2. Monte um volume (ex.: em `/data`) e aponte `DATA_FILE=/data/db.json`.
-3. Variáveis de ambiente obrigatórias:
+Configuração na Vercel:
+
+1. Importe o repositório. O framework Next.js é detectado; o `.npmrc` cuida do `legacy-peer-deps`; Node 22 vem de `engines` no `package.json`.
+2. Variáveis de ambiente (Settings → Environment Variables):
 
 | Variável | Valor |
 |---|---|
 | `ANTHROPIC_API_KEY` | chave `sk-ant-...` do Console da Anthropic (não a assinatura do Claude Code) |
 | `SESSION_SECRET` | string longa e aleatória; sem ela a aplicação não sobe em produção |
 | `ADMIN_PASSWORD` | senha da conta admin@nexo.com |
-| `DATA_FILE` | caminho no volume, ex. `/data/db.json` |
-| `NODE_ENV` | `production` (as plataformas já definem) |
+| `TICKET_OUTAGE_RATE` | `0` ou `0.05`, para a instabilidade simulada não atrapalhar quem testa |
 
-   Opcionais: `LLM_MODEL` (padrão `anthropic/claude-opus-5-5`; `anthropic/claude-haiku-5-5` é mais barato), `SESSION_TTL_SECONDS`, `AGENT_MSGS_PER_MINUTE`, `AGENT_MSGS_PER_DAY`, `TICKET_OUTAGE_RATE` (use `0.05` ou `0` em produção para a instabilidade simulada não atrapalhar os testes).
+   Opcionais: `LLM_MODEL` (padrão `anthropic/claude-opus-5-5`; `anthropic/claude-haiku-5-5` é mais barato), `SESSION_TTL_SECONDS`, `AGENT_MSGS_PER_MINUTE`, `AGENT_MSGS_PER_DAY`.
 
-4. Proteção da chave e do custo: além dos limites por usuário da aplicação, defina um limite de gasto mensal para a chave no Console da Anthropic. O cookie de sessão é `secure` em produção, então o serviço precisa estar atrás de HTTPS (padrão nessas plataformas).
+3. A rota de mensagens declara `maxDuration = 60`, porque um turno do agent leva de 5 a 15 s e o padrão da Vercel cortaria o stream.
+4. Custo: além dos limites por usuário da aplicação, defina um limite de gasto mensal para a chave no Console da Anthropic. O cookie de sessão é `secure` em produção; a Vercel já serve em HTTPS.
 
-**Zerar os dados**: apague o `db.json` (localmente `data/db.json`; no volume, o caminho de `DATA_FILE`) e reinicie o serviço. Ele é recriado a partir de `src/lib/seed.ts` com as duas contas e os chamados de exemplo do admin.
+Em plataformas com volume (Railway, Render, Fly.io) o mesmo código persiste de verdade: monte o volume e aponte `DATA_FILE` para ele.
+
+**Zerar os dados**: localmente, apague `data/db.json` e reinicie; na Vercel, um novo deploy (ou a reciclagem natural das funções) recria tudo a partir de `src/lib/seed.ts`, com as duas contas e os chamados de exemplo do admin.
