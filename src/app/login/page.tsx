@@ -1,29 +1,41 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { NexoMark } from "@/components/ui";
+
+const schema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Informe seu e-mail corporativo")
+    .email("E-mail inválido")
+    .refine((e) => e.toLowerCase().endsWith("@nexo.com"), "Use seu e-mail @nexo.com"),
+  password: z.string().min(1, "Informe sua senha"),
+});
+type Form = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(undefined);
+  async function submit(values: Form) {
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(values),
     });
     const data = (await res.json()) as { error?: string; user?: { role: string } };
-    setBusy(false);
-    if (!res.ok || !data.user) return setError(data.error ?? "Não foi possível entrar");
+    if (!res.ok || !data.user) return setError("root", { message: data.error ?? "Não foi possível entrar" });
     router.push(data.user.role === "analyst" ? "/console" : "/chat");
   }
 
@@ -87,7 +99,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-          <form onSubmit={submit} className="w-[380px] max-w-full space-y-7">
+          <form onSubmit={handleSubmit(submit)} noValidate className="w-[380px] max-w-full space-y-7">
             <div className="flex items-center gap-2.5 lg:hidden">
               <NexoMark size={22} />
               <span className="text-base font-bold">Nexo Assist</span>
@@ -102,8 +114,9 @@ export default function LoginPage() {
                 <span className="text-[13.5px] font-medium">E-mail corporativo</span>
                 <span className="relative block">
                   <Icon name="mail" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" />
-                  <input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu.nome@nexo.com" className={input} />
+                  <input type="email" autoFocus placeholder="E-mail" aria-invalid={!!errors.email} className={`${input} ${errors.email ? "border-danger" : ""}`} {...register("email")} />
                 </span>
+                {errors.email && <span className="text-[12.5px] text-danger-text">{errors.email.message}</span>}
               </label>
               <label className="flex flex-col gap-2">
                 <span className="flex items-center justify-between text-[13.5px] font-medium">
@@ -114,11 +127,12 @@ export default function LoginPage() {
                 </span>
                 <span className="relative block">
                   <Icon name="lock" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-text" />
-                  <input type={show ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Senha da rede Nexo" className={`${input} pr-11`} />
+                  <input type={show ? "text" : "password"} placeholder="Sua senha" aria-invalid={!!errors.password} className={`${input} pr-11 ${errors.password ? "border-danger" : ""}`} {...register("password")} />
                   <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Ocultar senha" : "Mostrar senha"} className="absolute right-2 top-1/2 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-md text-ink-3 hover:bg-desk">
                     <Icon name={show ? "eye-off" : "eye"} />
                   </button>
                 </span>
+                {errors.password && <span className="text-[12.5px] text-danger-text">{errors.password.message}</span>}
               </label>
               <label className="flex items-center gap-2.5 pt-0.5 text-[13.5px] text-ink-2">
                 <input type="checkbox" defaultChecked className="h-[18px] w-[18px] rounded-md accent-cta" />
@@ -126,15 +140,15 @@ export default function LoginPage() {
               </label>
             </div>
 
-            {error && (
+            {errors.root && (
               <p className="text-[13.5px] text-danger-text" role="alert">
-                {error}
+                {errors.root.message}
               </p>
             )}
 
-            <button type="submit" disabled={busy} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-cta text-[15.5px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,.12),0_6px_16px_-6px_rgba(0,98,196,.5)] hover:bg-cta-hover disabled:opacity-60">
-              {busy ? "Entrando…" : "Entrar"}
-              {!busy && <Icon name="arrow" />}
+            <button type="submit" disabled={isSubmitting} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-cta text-[15.5px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,.12),0_6px_16px_-6px_rgba(0,98,196,.5)] hover:bg-cta-hover disabled:opacity-60">
+              {isSubmitting ? "Entrando…" : "Entrar"}
+              {!isSubmitting && <Icon name="arrow" />}
             </button>
 
           </form>
