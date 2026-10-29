@@ -120,6 +120,8 @@ export interface Conversation {
   drafts: Draft[];
   summary?: string;
   transferReason?: string;
+  /** Chamado principal desta conversa (criado, atualizado ou transferido aqui). */
+  ticketId?: string;
   analystId?: string;
   createdAt: string;
   updatedAt: string;

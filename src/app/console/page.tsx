@@ -8,7 +8,7 @@ export default async function ConsolePage() {
   if (user.role !== "analyst") redirect("/chat");
   return (
     <ConsoleShell user={user}>
-      <div className="flex h-full items-center justify-center text-sm text-slate-500">Selecione uma conversa na lista.</div>
+      <div className="flex flex-1 items-center justify-center text-[13.5px] text-ink-3">Selecione uma conversa na lista.</div>
     </ConsoleShell>
   );
 }

@@ -182,6 +182,7 @@ const conversations: Conversation[] = [
     summary:
       "Ana pergunta pelo INC-20311 (notebook lento), que está vencido há 6 dias aguardando analista. Pediu para falar com uma pessoa.",
     transferReason: "chamado_vencido",
+    ticketId: "INC-20311",
     drafts: [],
     messages: [
       { id: "m1", role: "user", content: "Oi, meu chamado do notebook lento ainda não teve resposta. Alguém pode olhar?", at: daysAgo(0, 1) },

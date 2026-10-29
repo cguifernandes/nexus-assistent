@@ -21,7 +21,10 @@ export async function GET(req: Request) {
     transferReason: c.transferReason,
     analystId: c.analystId,
     summary: c.summary,
+    ticketId: c.ticketId,
+    lastConfidence: [...c.messages].reverse().find((m) => m.trace?.decision)?.trace?.decision?.confidence,
     lastMessage: c.messages.at(-1)?.content ?? "",
+    lastRole: c.messages.at(-1)?.role,
     messages: c.messages.length,
   }));
   return json({ conversations: items });

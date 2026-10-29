@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+/* Tokens do protótipo (nexo.pen) */
+@theme {
+  --color-paper: #ffffff;
+  --color-desk: #f6f7f9;
+  --color-desk-2: #eef1f5;
+  --color-ink: #1b2431;
+  --color-ink-2: #3d4656;
+  --color-ink-3: #5b6472;
+  --color-rule: #e6e8ec;
+  --color-cta: #0062c4;
+  --color-cta-hover: #0052a6;
+  --color-primary: #0285f7;
+  --color-primary-soft: #0285f712;
+  --color-primary-text: #0069c7;
+  --color-success: #00bd6c;
+  --color-success-soft: #00bd6c14;
+  --color-success-text: #00804a;
+  --color-warning: #f5a500;
+  --color-warning-soft: #f5a50018;
+  --color-warning-text: #946300;
+  --color-danger: #ee343b;
+  --color-danger-soft: #ee343b12;
+  --color-danger-text: #c4161d;
+  --color-line: #1b24311f;
+  --color-line-card: #1b243117;
+  --color-agent-bubble: #e6effa;
+  --color-human-bubble: #e3f4ea;
+
+  --font-sans: var(--font-ui), "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), "Newsreader", Georgia, serif;
+  --font-mono: var(--font-data), "IBM Plex Mono", ui-monospace, monospace;
 }
 
 html,
@@ -12,6 +40,9 @@ body {
 
 body {
   font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
 }
 
 .prose-chat p + p {
@@ -30,7 +61,7 @@ body {
 .prose-chat code {
   font-family: var(--font-mono);
   font-size: 0.85em;
-  background: #f1f5f9;
+  background: var(--color-desk);
   padding: 0 0.25rem;
   border-radius: 0.25rem;
 }

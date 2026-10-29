@@ -1,17 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { Conversation, Employee, Message } from "@/lib/types";
 import { MAX_USER_MESSAGES } from "@/lib/types";
 import type { AgentEvent } from "@/mastra/run";
+import { AppShell } from "./AppShell";
 import { MessageList, type Streaming } from "./Messages";
-import { ConversationBadge, api } from "./ui";
+import { StatusPill, api } from "./ui";
 
-const SUGGESTIONS = ["Como está meu chamado?", "Minha VPN dá erro 809", "Preciso de um segundo monitor", "Qual o horário do service desk?"];
+const SUGGESTIONS = ["Qual o status do meu chamado?", "Minha VPN dá erro 809", "Preciso de um segundo monitor", "Qual o horário do service desk?"];
 
 export function Chat({ user }: { user: Employee }) {
-  const router = useRouter();
   const [conv, setConv] = useState<Conversation>();
   const [streaming, setStreaming] = useState<Streaming | null>(null);
   const [input, setInput] = useState("");
@@ -44,50 +43,70 @@ export function Chat({ user }: { user: Employee }) {
   const userCount = conv?.messages.filter((m) => m.role === "user").length ?? 0;
   const canSend = !!conv && conv.status !== "closed" && !streaming && userCount < MAX_USER_MESSAGES;
 
-  async function send(text: string) {
-    if (!conv || !canSend || !text.trim()) return;
-    setError(undefined);
-    setInput("");
-    const optimistic: Conversation = { ...conv, messages: [...conv.messages, pendingMessage(text)] };
-    setConv(optimistic);
-    if (conv.status === "agent") setStreaming({ text: "", steps: [], blocks: [] });
-
-    try {
-      const res = await fetch(`/api/conversations/${conv.id}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
-      });
-      if (!res.headers.get("content-type")?.includes("text/event-stream")) {
-        const data = (await res.json()) as { error?: string; conversation?: Conversation };
-        if (data.conversation) setConv(data.conversation);
-        if (!res.ok) setError(data.error ?? "Erro ao enviar");
-        return;
+  const send = useCallback(
+    async (text: string) => {
+      if (!conv || !canSend || !text.trim()) return;
+      setError(undefined);
+      setInput("");
+      const optimistic: Conversation = { ...conv, messages: [...conv.messages, pendingMessage(text)] };
+      setConv(optimistic);
+      if (conv.status === "agent") setStreaming({ text: "", steps: [], blocks: [] });
+      try {
+        const res = await fetch(`/api/conversations/${conv.id}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: text }),
+        });
+        if (!res.headers.get("content-type")?.includes("text/event-stream")) {
+          const data = (await res.json()) as { error?: string; conversation?: Conversation };
+          if (data.conversation) setConv(data.conversation);
+          if (!res.ok) setError(data.error ?? "Erro ao enviar");
+          return;
+        }
+        await readSse(res, (ev) => {
+          if (ev.type === "text") setStreaming((s) => s && { ...s, text: s.text + ev.delta });
+          else if (ev.type === "step") setStreaming((s) => s && { ...s, steps: [...s.steps, ev.label] });
+          else if (ev.type === "block") setStreaming((s) => s && { ...s, blocks: [...s.blocks, ev.block] });
+          else if (ev.type === "error") setError(`O agent não conseguiu responder: ${ev.message}`);
+        });
+        await refresh(conv.id);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro de conexão");
+        await refresh(conv.id).catch(() => undefined);
+      } finally {
+        setStreaming(null);
       }
-      await readSse(res, (ev) => {
-        if (ev.type === "text") setStreaming((s) => s && { ...s, text: s.text + ev.delta });
-        else if (ev.type === "step") setStreaming((s) => s && { ...s, steps: [...s.steps, ev.label] });
-        else if (ev.type === "block") setStreaming((s) => s && { ...s, blocks: [...s.blocks, ev.block] });
-        else if (ev.type === "error") setError(`O agent não conseguiu responder: ${ev.message}`);
-      });
-      await refresh(conv.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro de conexão");
-      await refresh(conv.id).catch(() => undefined);
-    } finally {
-      setStreaming(null);
-    }
-  }
+    },
+    [conv, canSend, refresh],
+  );
+
+  // Atalhos do protótipo: 1–5 escolhe uma opção rápida; Ctrl/⌘+Enter confirma o rascunho pendente.
+  useEffect(() => {
+    if (!conv || !canSend) return;
+    const last = [...conv.messages].reverse().find((m) => m.role === "assistant");
+    const options = last?.blocks?.find((b) => b.type === "options");
+    const draft = last?.blocks?.find((b) => b.type === "draft");
+    const onKey = (e: KeyboardEvent) => {
+      const typing = document.activeElement === inputRef.current && input.length > 0;
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && draft?.type === "draft" && !draft.draft.applied) {
+        e.preventDefault();
+        void send(`Confirmo o rascunho ${draft.draft.id}, pode registrar.`);
+      } else if (!typing && !e.ctrlKey && !e.metaKey && options?.type === "options" && /^[1-5]$/.test(e.key)) {
+        const o = options.options[Number(e.key) - 1];
+        if (o) {
+          e.preventDefault();
+          void send(o);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [conv, canSend, input, send]);
 
   async function newConversation() {
     const { conversation } = await api<{ conversation: Conversation }>("/api/conversations", { method: "POST" });
     setConv(conversation);
     setError(undefined);
-  }
-
-  async function logout() {
-    await fetch("/api/auth", { method: "DELETE" });
-    router.push("/login");
   }
 
   function submit(e: FormEvent) {
@@ -104,46 +123,32 @@ export function Chat({ user }: { user: Employee }) {
   };
 
   return (
-    <div className="flex h-dvh flex-col">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">N</span>
-          <div className="leading-tight">
-            <div className="font-semibold">Nexo Assist</div>
-            <div className="text-xs text-slate-500">Service desk de TI</div>
-          </div>
-          {conv && <ConversationBadge status={conv.status} />}
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <button type="button" onClick={newConversation} className="text-indigo-600 hover:underline">
-              Nova conversa
-            </button>
-            <span className="hidden text-slate-500 sm:inline">{user.name}</span>
-            <button type="button" onClick={logout} className="text-slate-500 hover:underline">
-              Sair
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <AppShell
+      user={user}
+      crumb="Atendimento"
+      status={
+        <>
+          <button type="button" onClick={newConversation} className="text-[13.5px] font-medium text-primary-text hover:underline">
+            Nova conversa
+          </button>
+          {conv && <StatusPill status={conv.status} />}
+        </>
+      }
+    >
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6">
+        <div className="mx-auto max-w-[760px] px-5 pb-1 pt-7">
           {!conv ? (
-            <p className="text-sm text-slate-500">Carregando…</p>
+            <p className="text-[13.5px] text-ink-3">Carregando…</p>
           ) : conv.messages.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <h1 className="text-lg font-semibold">Oi, {user.name.split(" ")[0]}. Como posso ajudar?</h1>
-              <p className="mt-1 text-sm text-slate-600">
+            <div className="space-y-4 pt-10">
+              <h1 className="font-display text-[34px] leading-tight">Oi, {user.name.split(" ")[0]}. O que está acontecendo?</h1>
+              <p className="max-w-lg text-[14.5px] text-ink-3">
                 Descreva com suas palavras. Eu consulto seus chamados, busco na central de ajuda, abro ou atualizo chamados e chamo um
                 analista quando precisar.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 pt-2">
                 {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => send(s)}
-                    className="rounded-full border border-slate-300 bg-white px-3 py-1 text-sm hover:border-indigo-400 hover:text-indigo-700"
-                  >
+                  <button key={s} type="button" onClick={() => send(s)} className="rounded-lg border border-rule bg-paper px-3 py-[7px] text-[13.5px] font-medium hover:border-primary hover:bg-primary-soft hover:text-primary-text">
                     {s}
                   </button>
                 ))}
@@ -156,63 +161,60 @@ export function Chat({ user }: { user: Employee }) {
         </div>
       </main>
 
-      <footer className="border-t bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-3">
-          {conv?.status === "waiting_analyst" && (
-            <Banner tone="amber">Um analista vai assumir esta conversa em instantes. O Nexo Assist está pausado; você pode continuar escrevendo.</Banner>
-          )}
-          {conv?.status === "with_analyst" && <Banner tone="emerald">Você está falando com um analista do service desk.</Banner>}
+      <footer className="shrink-0">
+        <div className="mx-auto max-w-[760px] space-y-1.5 px-5 pb-[18px] pt-2.5">
+          {conv?.status === "waiting_analyst" && <Banner tone="warning">Um analista vai assumir esta conversa em instantes. O Nexo Assist está pausado; você pode continuar escrevendo.</Banner>}
+          {conv?.status === "with_analyst" && <Banner tone="success">Você está falando com um analista do service desk.</Banner>}
           {conv?.status === "closed" && (
-            <Banner tone="slate">
+            <Banner tone="neutral">
               Esta conversa foi encerrada.{" "}
-              <button type="button" onClick={newConversation} className="font-medium text-indigo-600 hover:underline">
+              <button type="button" onClick={newConversation} className="font-semibold text-primary-text hover:underline">
                 Começar uma nova
               </button>
             </Banner>
           )}
           {error && (
-            <p className="mb-2 text-sm text-red-600" role="alert">
+            <p className="text-[13.5px] text-danger-text" role="alert">
               {error}
             </p>
           )}
-          <form onSubmit={submit} className="flex items-end gap-2">
+          <form onSubmit={submit} className="flex min-h-12 items-end gap-2 rounded-xl border border-line bg-paper py-1.5 pl-4 pr-1.5 focus-within:border-cta focus-within:ring-2 focus-within:ring-cta/15">
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                   e.preventDefault();
                   void send(input);
                 }
               }}
               rows={1}
               disabled={!canSend}
-              placeholder={canSend ? "Escreva sua mensagem…" : "Aguarde…"}
-              className="max-h-40 min-h-[42px] flex-1 resize-y rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50"
+              placeholder={canSend ? "Escreva para o Nexo…" : "Aguarde…"}
+              className="max-h-40 min-h-[34px] flex-1 resize-none bg-transparent py-[7px] text-[14.5px] placeholder:text-ink-3 focus:outline-none disabled:text-ink-3"
             />
-            <button
-              type="submit"
-              disabled={!canSend || !input.trim()}
-              className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-            >
+            <button type="submit" disabled={!canSend || !input.trim()} className="flex h-9 items-center gap-1.5 rounded-md bg-cta px-3 text-[13.5px] font-semibold text-white hover:bg-cta-hover disabled:opacity-50">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4Z" />
+              </svg>
               Enviar
             </button>
           </form>
-          <div className="mt-1 text-right text-xs text-slate-400">
-            {userCount}/{MAX_USER_MESSAGES} mensagens nesta conversa
+          <div className="text-right text-[12.5px] text-ink-3">
+            {userCount}/{MAX_USER_MESSAGES} mensagens nesta sessão
           </div>
         </div>
       </footer>
-    </div>
+    </AppShell>
   );
 }
 
 const pendingMessage = (content: string): Message => ({ id: `tmp-${Date.now()}`, role: "user", content, at: new Date().toISOString() });
 
-function Banner({ tone, children }: { tone: "amber" | "emerald" | "slate"; children: React.ReactNode }) {
-  const cls = { amber: "bg-amber-50 text-amber-800", emerald: "bg-emerald-50 text-emerald-800", slate: "bg-slate-100 text-slate-700" }[tone];
-  return <div className={`mb-2 rounded-lg px-3 py-2 text-sm ${cls}`}>{children}</div>;
+function Banner({ tone, children }: { tone: "warning" | "success" | "neutral"; children: React.ReactNode }) {
+  const cls = { warning: "bg-warning-soft text-warning-text", success: "bg-success-soft text-success-text", neutral: "bg-desk text-ink-2" }[tone];
+  return <div className={`rounded-lg px-3 py-2 text-[13.5px] ${cls}`}>{children}</div>;
 }
 
 /** Lê um stream SSE (`data: {...}\n\n`) e chama onEvent por evento. */

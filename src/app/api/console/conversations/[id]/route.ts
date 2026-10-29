@@ -7,6 +7,7 @@ async function load(id: string) {
   const conv = conversations.get(id);
   if (!conv) return undefined;
   const employee = db().employees.find((e) => e.id === conv.employeeId);
+  const analyst = conv.analystId ? db().employees.find((e) => e.id === conv.analystId) : undefined;
   let employeeTickets = null;
   let ticketsError: string | undefined;
   try {
@@ -14,7 +15,7 @@ async function load(id: string) {
   } catch (e) {
     ticketsError = e instanceof Error ? e.message : "Erro ao consultar chamados";
   }
-  return { conversation: conv, employee, tickets: employeeTickets, ticketsError };
+  return { conversation: conv, employee, analyst, tickets: employeeTickets, ticketsError };
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {

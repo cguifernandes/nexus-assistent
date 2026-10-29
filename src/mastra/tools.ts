@@ -218,6 +218,7 @@ export const applyDraft = createTool({
     });
     if ("error" in r) return r;
     draft.applied = true;
+    conv.ticketId = r.id;
     const block: Block = { type: "tickets", tickets: [r], selectable: false };
     return { ticket: brief(r), block };
   },
@@ -244,7 +245,7 @@ export const transferToAnalyst = createTool({
     const { employeeId, conversationId } = who(ctx as ExecCtx);
     const conv = conversations.getOwned(conversationId, employeeId);
     if (!conv) return { error: "Conversa não encontrada" };
-    conversations.setStatus(conv, "waiting_analyst", { summary, transferReason: reason });
+    conversations.setStatus(conv, "waiting_analyst", { summary, transferReason: reason, ticketId: ticketId?.toUpperCase() ?? conv.ticketId });
     if (ticketId) await safe(() => tickets.escalate(ticketId, employeeId, summary));
     return { ok: true, note: "Conversa na fila de analistas. Encerre sua resposta em uma frase." };
   },

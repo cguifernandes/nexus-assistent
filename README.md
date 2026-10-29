@@ -57,6 +57,8 @@ Três camadas, cada uma só fala com a de baixo:
 
 **Sessão.** Login emite um JWT (HS256 via `jose`, `sub` = id do funcionário, `iat`, `exp`) guardado em cookie `httpOnly`, `sameSite: lax`, `secure` em produção. Toda requisição à API verifica assinatura e expiração em `currentUser`; token inválido ou vencido devolve 401 (ou redireciona ao login nas páginas). Validade padrão de 8 h (`SESSION_TTL_SECONDS`), renovada a cada chamada de API quando passou da metade do prazo (sessão deslizante). `SESSION_SECRET` é obrigatório em produção. As rotas do console exigem `role: analyst`. Chamados nunca são filtrados no cliente: o filtro por funcionário está no serviço.
 
+**Interface.** Segue o protótipo Pencil do Anexo C: tokens de cor, raios e tipografia (Newsreader para títulos, Schibsted Grotesk na UI, IBM Plex Mono para ids) estão em `src/app/globals.css`; sidebar e top bar em `AppShell`, console em `ConsoleShell`. Atalhos do protótipo: teclas 1–5 escolhem uma opção rápida e Ctrl/⌘+Enter confirma o rascunho.
+
 ## Como o agent decide
 
 Um único agent Mastra com 9 ferramentas e instruções que transcrevem o Anexo A. A cada mensagem:
