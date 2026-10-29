@@ -5,6 +5,7 @@ import * as tickets from "@/services/tickets";
 import * as helpcenter from "@/services/helpcenter";
 import { signSession, verifySession } from "@/lib/auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { _resetRate, checkAgentRate } from "@/lib/ratelimit";
 
 process.env.TICKET_OUTAGE_RATE = "0";
 
@@ -115,5 +116,14 @@ describe("senha", () => {
     expect(verifyPassword("teste123", h)).toBe(true);
     expect(verifyPassword("teste124", h)).toBe(false);
     expect(verifyPassword("x", "lixo")).toBe(false);
+  });
+});
+
+describe("limite de mensagens", () => {
+  it("bloqueia a 11ª mensagem no mesmo minuto e não mistura usuários", () => {
+    _resetRate();
+    for (let i = 0; i < 10; i++) expect(checkAgentRate("u1")).toBeUndefined();
+    expect(checkAgentRate("u1")).toMatch(/minuto/);
+    expect(checkAgentRate("u2")).toBeUndefined();
   });
 });

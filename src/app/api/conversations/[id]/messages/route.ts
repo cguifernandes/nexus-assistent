@@ -2,6 +2,7 @@ import { isResponse, json, requireUser } from "@/lib/api";
 import { MAX_USER_MESSAGES } from "@/lib/types";
 import * as conversations from "@/services/conversations";
 import { runAgent, type AgentEvent } from "@/mastra/run";
+import { checkAgentRate } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return json({ error: `Limite de ${MAX_USER_MESSAGES} mensagens por conversa atingido.`, conversation: conv }, 409);
   }
 
+  if (conv.status === "agent") {
+    const limited = checkAgentRate(user.id);
+    if (limited) return json({ error: limited, conversation: conv }, 429);
+  }
   const message = conversations.addMessage(conv, { role: "user", content: text });
   if (conv.status !== "agent") return json({ message, status: conv.status, conversation: conv });
 

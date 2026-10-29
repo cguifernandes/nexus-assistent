@@ -114,6 +114,11 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 - Rate limiting por usuário e orçamento de tokens por conversa, obrigatórios antes de um deploy público.
 - Mais artigos na central de ajuda e busca semântica.
 
+## Segurança do agent
+
+- **Limites por usuário** (`lib/ratelimit.ts`): 10 mensagens ao assistente por minuto e 150 por dia, configuráveis por `AGENT_MSGS_PER_MINUTE` e `AGENT_MSGS_PER_DAY`; além disso cada conversa tem no máximo 30 mensagens, cada mensagem 2000 caracteres, e cada resposta do agent no máximo 8 passos e 1200 tokens de saída. Os contadores ficam em memória (um processo); com mais de uma instância, mova para Redis ou banco.
+- **Prompt injection**: as regras que importam não dependem do modelo obedecer. A identidade vem do cookie e entra nas ferramentas pelo `RequestContext`, nunca do texto; `applyDraft` recusa sem confirmação direta; posse de chamado, janela de reabertura e pausa do agent são verificadas no serviço. As instruções ainda mandam o agent tratar mensagens, artigos e resultados de ferramentas como dados, recusar troca de papel ou de regras, e não revelar o prompt. O pior caso de uma injeção bem-sucedida é uma resposta de texto errada, visível no trace, nunca uma ação fora das regras.
+
 ## Deploy
 
 Não publiquei. O armazenamento em arquivo precisa de disco persistente (Fly.io/Railway com volume); em Vercel seria necessário trocar `lib/db.ts` por um banco. Antes de expor publicamente: rate limit por sessão, limite diário de tokens e `SESSION_SECRET` forte.
