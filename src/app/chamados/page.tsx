@@ -4,6 +4,8 @@ import { currentUser } from "@/lib/auth";
 import { AppShell } from "@/components/AppShell";
 import { TicketCard } from "@/components/Blocks";
 import * as tickets from "@/services/tickets";
+import * as conversations from "@/services/conversations";
+import { ConversationList } from "@/components/ConversationList";
 import type { TicketView } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +23,19 @@ export default async function ChamadosPage() {
   }
   const open = list?.filter((t) => t.open) ?? [];
   const closed = list?.filter((t) => !t.open) ?? [];
+  const convs = conversations.listByEmployee(user.id).map(conversations.summarize);
+  // Clicar num chamado abre a conversa ligada a ele, se houver.
+  const convByTicket = new Map(convs.filter((c) => c.ticketId).map((c) => [c.ticketId!, c.id]));
+  const card = (t: TicketView) => {
+    const cid = convByTicket.get(t.id);
+    return cid ? (
+      <Link key={t.id} href={`/chat?c=${cid}`} className="block rounded-2xl transition hover:ring-2 hover:ring-primary/40">
+        <TicketCard ticket={t} />
+      </Link>
+    ) : (
+      <TicketCard key={t.id} ticket={t} />
+    );
+  };
 
   return (
     <AppShell
@@ -43,6 +58,8 @@ export default async function ChamadosPage() {
             </p>
           </div>
 
+          <ConversationList items={convs} />
+
           {list !== null && list.length === 0 && (
             <div className="rounded-2xl border border-line-card bg-paper p-8 text-center">
               <p className="text-[15.5px] font-semibold">Você ainda não tem chamados.</p>
@@ -56,17 +73,13 @@ export default async function ChamadosPage() {
           {open.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-[12.5px] font-semibold text-ink-3">Em aberto</h2>
-              {open.map((t) => (
-                <TicketCard key={t.id} ticket={t} />
-              ))}
+              {open.map(card)}
             </section>
           )}
           {closed.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-[12.5px] font-semibold text-ink-3">Encerrados</h2>
-              {closed.map((t) => (
-                <TicketCard key={t.id} ticket={t} />
-              ))}
+              {closed.map(card)}
             </section>
           )}
         </div>

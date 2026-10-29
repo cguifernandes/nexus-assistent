@@ -64,3 +64,29 @@ export function addDraft(c: Conversation, d: Omit<Draft, "id">): Draft {
 }
 
 export const userMessageCount = (c: Conversation): number => c.messages.filter((m) => m.role === "user").length;
+
+export interface ConversationSummary {
+  id: string;
+  status: ConversationStatus;
+  updatedAt: string;
+  ticketId?: string;
+  lastMessage: string;
+  lastRole?: Message["role"];
+  /** Mensagens de analista depois da última mensagem do funcionário. */
+  unreadFromAnalyst: number;
+}
+
+export function summarize(c: Conversation): ConversationSummary {
+  const lastUserIdx = c.messages.map((m) => m.role).lastIndexOf("user");
+  const unread = c.messages.slice(lastUserIdx + 1).filter((m) => m.role === "analyst").length;
+  const last = c.messages.at(-1);
+  return {
+    id: c.id,
+    status: c.status,
+    updatedAt: c.updatedAt,
+    ticketId: c.ticketId,
+    lastMessage: last?.content ?? "",
+    lastRole: last?.role,
+    unreadFromAnalyst: unread,
+  };
+}

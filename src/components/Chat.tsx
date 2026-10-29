@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { Conversation, Employee, Message } from "@/lib/types";
 import { MAX_USER_MESSAGES } from "@/lib/types";
@@ -10,7 +11,7 @@ import { DotPill, StatusPill, api } from "./ui";
 
 const SUGGESTIONS = ["Qual o status do meu chamado?", "Minha VPN dá erro 809", "Preciso de um segundo monitor", "Qual o horário do service desk?"];
 
-export function Chat({ user }: { user: Employee }) {
+export function Chat({ user, initialId }: { user: Employee; initialId?: string }) {
   const [conv, setConv] = useState<Conversation>();
   const [streaming, setStreaming] = useState<Streaming | null>(null);
   const [input, setInput] = useState("");
@@ -28,8 +29,8 @@ export function Chat({ user }: { user: Employee }) {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- setState só após o fetch
-    refresh().catch((e: Error) => setError(e.message));
-  }, [refresh]);
+    refresh(initialId).catch((e: Error) => setError(e.message));
+  }, [refresh, initialId]);
 
   // Polling simples para receber mensagens do analista e mudanças de status.
   useEffect(() => {
@@ -130,6 +131,9 @@ export function Chat({ user }: { user: Employee }) {
       crumb="Atendimento"
       status={
         <>
+          <Link href="/chamados" className="text-[13.5px] font-medium text-ink-2 hover:text-primary-text">
+            Minhas conversas
+          </Link>
           <button type="button" onClick={newConversation} className="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-paper px-3 text-[13.5px] font-medium text-ink-2 hover:border-primary hover:bg-primary-soft hover:text-primary-text">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
