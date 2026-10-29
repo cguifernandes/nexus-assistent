@@ -62,13 +62,14 @@ function Row({ m, active, actions }: { m: Message; active: boolean; actions?: Bl
     );
   }
   const hasText = m.content && m.content !== "(sem resposta)";
+  const options = m.blocks?.filter((b) => b.type === "options") ?? [];
   return (
     <div className="space-y-1.5">
       <StatusLine trace={m.trace} />
-      {hasText && (
+      {(hasText || options.length > 0) && (
         <div className="max-w-[600px] rounded-[4px_12px_12px_12px] border border-rule bg-paper px-4 py-3 text-[14.5px]">
-          <Rich text={m.content} />
-          {m.blocks && <Blocks blocks={m.blocks.filter((b) => b.type === "options")} active={active} actions={actions} />}
+          {hasText ? <Rich text={m.content} /> : <p className="text-ink-3">Escolha uma opção abaixo:</p>}
+          <Blocks blocks={options} active={active} actions={actions} />
         </div>
       )}
       {m.blocks && (

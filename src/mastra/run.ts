@@ -31,6 +31,8 @@ function dynamicSystem(conv: Conversation, employee: Employee): string {
   return lines.join("\n");
 }
 
+const lastUser = (conv: Conversation): string => [...conv.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+
 /** Roda um turno do agent e emite eventos para o cliente. Persiste a resposta ao final. */
 export async function runAgent(conv: Conversation, employee: Employee, emit: (e: AgentEvent) => void): Promise<void> {
   if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY não configurada no .env");
@@ -110,6 +112,24 @@ async function runTurn(conv: Conversation, employee: Employee, emit: (e: AgentEv
       case "error":
         throw chunk.payload.error instanceof Error ? chunk.payload.error : new Error(String(chunk.payload.error));
     }
+  }
+
+  // O modelo às vezes encerra o turno logo após uma ferramenta, sem a mensagem final
+  // (texto escrito antes de uma chamada de ferramenta não chega como texto). Pede a resposta.
+  if (!text.trim()) {
+    const summary = steps.map((s) => `${s.tool}(${JSON.stringify(s.args)}) -> ${JSON.stringify(s.result).slice(0, 400)}`).join("\n");
+    const follow = await agent.generate([...history, { role: "user", content: lastUser(conv) }], {
+      toolChoice: "none",
+      maxSteps: 1,
+      system: `${dynamicSystem(conv, employee)}
+Você já executou nesta resposta:
+${summary}
+Agora escreva a resposta final ao funcionário (curta). Se ofereceu opções, faça a pergunta que elas respondem.`,
+      modelSettings: { maxOutputTokens: 600 },
+    });
+    text = follow.text;
+    emit({ type: "text", delta: text });
+    steps.push({ tool: "finalizeReply", label: "Completou a resposta", args: {}, result: { ok: true }, ms: 0 });
   }
 
   const usage = await stream.usage.catch(() => undefined);
