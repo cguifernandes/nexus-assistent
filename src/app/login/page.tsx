@@ -153,7 +153,6 @@ export default function LoginPage() {
                   />
                   <input
                     type="email"
-                    autoFocus
                     placeholder="E-mail"
                     aria-invalid={!!errors.email}
                     className={`${input} ${errors.email ? "border-danger" : ""}`}
