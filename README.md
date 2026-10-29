@@ -12,7 +12,7 @@ npm run dev                      # http://localhost:3000
 
 Outros comandos: `npm test` (vitest), `npm run typecheck`, `npm run lint`, `npm run build && npm start`.
 
-Contas de exemplo (qualquer senha):
+Contas de exemplo (qualquer senha; a tela de login não as lista):
 
 | E-mail | Perfil |
 |---|---|

@@ -4,12 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { NexoMark } from "@/components/ui";
 
-const EXAMPLES = [
-  { email: "ana.souza@nexo.com", who: "funcionária com chamados" },
-  { email: "bruno.lima@nexo.com", who: "funcionário" },
-  { email: "diego.rocha@nexo.com", who: "analista" },
-];
-
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -103,15 +97,15 @@ export default function LoginPage() {
               <p className="text-[15.5px] text-ink-3">Use seu e-mail corporativo e a senha da rede Nexo.</p>
             </div>
 
-            <div className="space-y-[18px]">
-              <label className="block space-y-2">
+            <div className="flex flex-col gap-6">
+              <label className="flex flex-col gap-2">
                 <span className="text-[13.5px] font-medium">E-mail corporativo</span>
                 <span className="relative block">
                   <Icon name="mail" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" />
-                  <input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome.sobrenome@nexo.com" className={input} />
+                  <input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu.nome@nexo.com" className={input} />
                 </span>
               </label>
-              <label className="block space-y-2">
+              <label className="flex flex-col gap-2">
                 <span className="flex items-center justify-between text-[13.5px] font-medium">
                   Senha
                   <a href="/perfil" className="text-primary-text">
@@ -120,7 +114,7 @@ export default function LoginPage() {
                 </span>
                 <span className="relative block">
                   <Icon name="lock" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-text" />
-                  <input type={show ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="qualquer senha" className={`${input} pr-11`} />
+                  <input type={show ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Senha da rede Nexo" className={`${input} pr-11`} />
                   <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Ocultar senha" : "Mostrar senha"} className="absolute right-2 top-1/2 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-md text-ink-3 hover:bg-desk">
                     <Icon name={show ? "eye-off" : "eye"} />
                   </button>
@@ -143,19 +137,6 @@ export default function LoginPage() {
               {!busy && <Icon name="arrow" />}
             </button>
 
-            <div className="border-t border-rule pt-4 text-[12.5px] text-ink-3">
-              <p className="mb-1.5">Contas de exemplo (qualquer senha):</p>
-              <ul className="space-y-1">
-                {EXAMPLES.map((x) => (
-                  <li key={x.email}>
-                    <button type="button" className="text-primary-text hover:underline" onClick={() => setEmail(x.email)}>
-                      {x.email}
-                    </button>{" "}
-                    · {x.who}
-                  </li>
-                ))}
-              </ul>
-            </div>
           </form>
         </div>
 
