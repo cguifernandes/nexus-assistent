@@ -21,17 +21,23 @@ export function StatusLine({ trace, live, compact }: { trace?: Trace; live?: str
   const [open, setOpen] = useState(false);
   const labels = unique(trace ? trace.steps.map((s) => s.label) : (live ?? []));
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
-        {!compact && <span className="font-semibold text-ink">Nexo Assist</span>}
-        {labels.map((l, i) => (
-          <span key={l} className="inline-flex items-center gap-[5px] text-ink-3">
-            {!trace && i === labels.length - 1 ? <Spinner /> : <Check />}
-            {l}
-          </span>
-        ))}
+    <div className="max-w-[600px]">
+      <div className="flex items-center gap-3 text-[12.5px]">
+        {!compact && <span className="shrink-0 font-semibold text-ink">Nexo Assist</span>}
+        {/* Uma linha só: rola na horizontal e esmaece à direita; "Ver detalhes" fica sempre visível. */}
+        <div className="relative min-w-0 flex-1">
+          <div className="scrollbar-none flex items-center gap-3 overflow-x-auto whitespace-nowrap pr-8">
+            {labels.map((l, i) => (
+              <span key={l} className="inline-flex shrink-0 items-center gap-[5px] text-ink-3">
+                {!trace && i === labels.length - 1 ? <Spinner /> : <Check />}
+                {l}
+              </span>
+            ))}
+          </div>
+          <div className={`pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l to-transparent ${compact ? "from-desk-2" : "from-paper"}`} />
+        </div>
         {trace && (
-          <button type="button" onClick={() => setOpen((o) => !o)} className="text-primary-text hover:underline">
+          <button type="button" onClick={() => setOpen((o) => !o)} className="shrink-0 text-primary-text hover:underline">
             {open ? "Ocultar detalhes" : "Ver detalhes"}
           </button>
         )}

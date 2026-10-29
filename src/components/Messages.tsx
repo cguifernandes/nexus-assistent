@@ -61,8 +61,10 @@ function Row({ m, active, actions }: { m: Message; active: boolean; actions?: Bl
       </div>
     );
   }
-  const hasText = m.content && m.content !== "(sem resposta)";
-  const options = m.blocks?.filter((b) => b.type === "options") ?? [];
+  // Com rascunho, só o card aparece: ele já traz o texto e os botões de confirmação.
+  const hasDraft = m.blocks?.some((b) => b.type === "draft") ?? false;
+  const hasText = !hasDraft && m.content && m.content !== "(sem resposta)";
+  const options = hasDraft ? [] : (m.blocks?.filter((b) => b.type === "options") ?? []);
   return (
     <div className="space-y-1.5">
       <StatusLine trace={m.trace} />
