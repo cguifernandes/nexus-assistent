@@ -1,11 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Article, Conversation, Employee, Ticket } from "./types";
+import type { Conversation, Employee, Ticket } from "./types";
 import { seed } from "./seed";
 
 export interface DB {
   employees: Employee[];
-  articles: Article[];
   tickets: Ticket[];
   conversations: Conversation[];
   counters: { INC: number; REQ: number; conv: number };

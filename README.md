@@ -91,6 +91,9 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 
 - **Regras críticas em código, não só no prompt**: confirmação antes de aplicar rascunho, posse do chamado, janela de 7 dias para reabrir, limite de mensagens, pausa do agent quando a conversa está com analista. Se o modelo errar, a ferramenta recusa e explica, e o erro fica visível no trace.
 - **Segurança explícita**: o agent precisa declarar a confiança antes de agir; abaixo de 0,4 a ferramenta o empurra para perguntar ou transferir, atendendo “quando o agent não tem segurança sobre o que fazer”.
+- **Avaliação do agent** (`npm run eval`): 15 conversas em `evals/cases.ts` com a decisão esperada (intenção, ferramentas que deve e não deve chamar, tipo/prioridade/modo do rascunho, trecho da resposta). Roda contra o modelo de verdade e imprime a nota por caso e por critério (também em `evals/last-report.txt`). Baseline com Claude Opus 5.5: 97% dos critérios, ~235 mil tokens por rodada. É assim que mudanças no prompt são medidas em vez de chutadas.
+- **Exemplos no prompt**: além das regras, as instruções trazem nove exemplos curtos de condução (dúvida, VPN no Windows 11, equipamento, crítico, consulta com vários chamados, analista, RH, reabertura, mensagem vaga).
+- **Central de ajuda** com 20 artigos em `src/lib/articles.ts`, com sinônimos nas tags porque a busca é por palavras. Conteúdo estático, fora do `db.json`.
 - **Testes** (`tests/tickets.test.ts`) nas regras determinísticas: horas úteis, vencimento, reabertura, privacidade, duplicidade, retry do legado, busca da central de ajuda, assinatura da sessão.
 - **Dados de exemplo com casos de borda**: chamado vencido, resolvido há 4 dias (reabrível) e há 20 dias (não), VPN 809 em Windows 11 (artigo manda abrir chamado), conversa já transferida para o console não começar vazio.
 - **Trace em toda resposta**: o avaliador vê exatamente por que o agent fez o que fez, e eu usei isso para ajustar as instruções.
@@ -107,12 +110,12 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 
 ## O que faria com mais tempo
 
-- Avaliação automatizada do agent: um conjunto de conversas com a decisão esperada (intenção, ação, prioridade), rodado contra o modelo em CI, com score por critério.
+- Rodar a avaliação em CI a cada mudança de prompt, com mais casos multi-turno (confirmação, ajuste de rascunho, analista devolvendo ao agent).
 - Streaming bidirecional (WebSocket) para analista e funcionário, com indicador de “digitando”.
 - Edição do rascunho em formulário, além do ajuste por texto.
 - Banco relacional, migrações e um serviço de chamados HTTP de verdade com contrato OpenAPI.
 - Rate limiting por usuário e orçamento de tokens por conversa, obrigatórios antes de um deploy público.
-- Mais artigos na central de ajuda e busca semântica.
+- Busca semântica (embeddings) na central de ajuda.
 
 ## Segurança do agent
 

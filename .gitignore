@@ -43,3 +43,4 @@ next-env.d.ts
 # dados locais
 /data
 !.env.example
+evals/last-report.txt
