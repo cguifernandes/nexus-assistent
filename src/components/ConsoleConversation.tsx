@@ -32,11 +32,11 @@ export function ConsoleConversation({ id, me }: { id: string; me: Employee }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data?.conversation.messages.length]);
 
-  async function act(action: "takeover" | "return" | "close" | "message", content?: string) {
+  async function act(action: "takeover" | "return" | "close" | "message" | "resolveTicket", content?: string, ticketId?: string) {
     setBusy(true);
     setError(undefined);
     try {
-      setData(await api<Data>(`/api/console/conversations/${id}`, { method: "POST", body: JSON.stringify({ action, content }) }));
+      setData(await api<Data>(`/api/console/conversations/${id}`, { method: "POST", body: JSON.stringify({ action, content, ticketId }) }));
       if (action === "message") setInput("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro");
@@ -192,6 +192,11 @@ export function ConsoleConversation({ id, me }: { id: string; me: Employee }) {
                         <span className="shrink-0 text-[12.5px] text-ink-3">{shortWhen(current.history.at(-1)!.at)}</span>
                       </div>
                     )}
+                    {current.open && (
+                      <Btn tone="primary" disabled={busy} onClick={() => act("resolveTicket", undefined, current.id)}>
+                        Resolver chamado
+                      </Btn>
+                    )}
                   </div>
                 </section>
               )}
@@ -199,12 +204,19 @@ export function ConsoleConversation({ id, me }: { id: string; me: Employee }) {
                 <h3 className="pb-1 text-[12.5px] font-semibold text-ink-3">{current ? "Outros chamados" : "Chamados"}</h3>
                 {others.length === 0 && <p className="text-[13.5px] text-ink-3">Nenhum outro chamado.</p>}
                 {others.map((t, i) => (
-                  <div key={t.id} className={`space-y-[3px] py-3 ${i < others.length - 1 ? "border-b border-rule" : ""}`}>
-                    <div className="text-[14.5px] font-medium leading-snug">{t.title}</div>
-                    <div className="flex items-center gap-1.5 text-[12.5px] text-ink-3">
-                      <span className="font-mono">{t.id}</span>· {t.open ? t.status : `${t.status} em ${shortWhen(t.updatedAt)}`}
-                      {t.overdue && <span className="text-warning-text">· vencido</span>}
+                  <div key={t.id} className={`flex items-center gap-2 py-3 ${i < others.length - 1 ? "border-b border-rule" : ""}`}>
+                    <div className="min-w-0 flex-1 space-y-[3px]">
+                      <div className="text-[14.5px] font-medium leading-snug">{t.title}</div>
+                      <div className="flex items-center gap-1.5 text-[12.5px] text-ink-3">
+                        <span className="font-mono">{t.id}</span>· {t.open ? t.status : `${t.status} em ${shortWhen(t.updatedAt)}`}
+                        {t.overdue && <span className="text-warning-text">· vencido</span>}
+                      </div>
                     </div>
+                    {t.open && (
+                      <button type="button" disabled={busy} onClick={() => act("resolveTicket", undefined, t.id)} className="shrink-0 rounded-lg border border-line bg-paper px-2.5 py-1 text-[12.5px] font-medium text-ink-2 hover:border-success hover:bg-success-soft hover:text-success-text disabled:opacity-50">
+                        Resolver
+                      </button>
+                    )}
                   </div>
                 ))}
               </section>
