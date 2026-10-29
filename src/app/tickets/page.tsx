@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { TicketCard } from "@/components/Blocks";
 import * as tickets from "@/services/tickets";
 import * as conversations from "@/services/conversations";
+import { ConversationList } from "@/components/ConversationList";
 import type { TicketView } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +89,8 @@ export default async function ChamadosPage() {
           )}
 
           {list && list.length > 0 && <div className="space-y-3">{[...open, ...closed].map(card)}</div>}
+
+          <ConversationList items={convs} />
         </div>
       </main>
     </AppShell>
