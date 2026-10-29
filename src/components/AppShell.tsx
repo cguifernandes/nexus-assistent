@@ -10,7 +10,8 @@ export function AppShell({ user, crumb, status, children }: { user: Employee; cr
   const path = usePathname();
   const router = useRouter();
   const nav = [
-    { href: "/chat", label: "Atendimento", icon: <IconChat /> },
+    { href: "/chamados", label: "Atendimento", icon: <IconTickets /> },
+    { href: "/chat", label: "Nexo Assist", icon: <IconChat /> },
     { href: "/perfil", label: "Meu perfil", icon: <IconUser /> },
     ...(user.role === "analyst" ? [{ href: "/console", label: "Console do analista", icon: <IconConsole /> }] : []),
   ];
@@ -78,6 +79,13 @@ function IconChat() {
   return (
     <svg {...svg} aria-hidden="true">
       <path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" />
+    </svg>
+  );
+}
+function IconTickets() {
+  return (
+    <svg {...svg} aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h10" />
     </svg>
   );
 }
