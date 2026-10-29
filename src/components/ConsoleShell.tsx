@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ConversationStatus, Employee } from "@/lib/types";
 import { Avatar, DotPill, NexoMark, api, shortWhen } from "./ui";
@@ -49,8 +49,9 @@ export function itemTag(c: ConversationItem, meId: string): { text: string; cls:
 }
 
 /** Layout do console: rail + lista de conversas à esquerda, conteúdo à direita. */
-export function ConsoleShell({ user, selectedId, children }: { user: Employee; selectedId?: string; children: React.ReactNode }) {
+export function ConsoleShell({ user, children }: { user: Employee; children: React.ReactNode }) {
   const router = useRouter();
+  const selectedId = usePathname().split("/")[2];
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [items, setItems] = useState<ConversationItem[]>();
@@ -163,7 +164,7 @@ export function ConsoleShell({ user, selectedId, children }: { user: Employee; s
               return (
                 <button key={f.key} type="button" onClick={() => setFilter(f.key)} className={`flex items-center gap-1.5 rounded-full px-[9px] py-1.5 text-[12.5px] font-medium ${active || (f.key === "for_you" && filter === "all" && n) ? "bg-primary-soft text-primary-text" : "bg-desk text-ink-2 hover:bg-rule/70"}`}>
                   {f.label}
-                  {n !== undefined && n > 0 && <span className={`font-semibold ${active ? "text-primary-text" : "text-ink-3"}`}>{n}</span>}
+                  {n !== undefined && <span className={`min-w-[1ch] text-center font-semibold tabular-nums ${active ? "text-primary-text" : "text-ink-3"}`}>{items ? n : "·"}</span>}
                 </button>
               );
             })}

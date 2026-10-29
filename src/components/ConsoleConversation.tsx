@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { Conversation, Employee, TicketView } from "@/lib/types";
 import { ConsoleMessageList } from "./Messages";
-import { Avatar, DotPill, PRIORITY_DOT, TicketStatusDot, api, fmtTime, shortWhen } from "./ui";
+import { Avatar, DotPill, PRIORITY_DOT, Spinner, TicketStatusDot, api, fmtTime, shortWhen } from "./ui";
 
 interface Data {
   conversation: Conversation;
@@ -50,7 +50,13 @@ export function ConsoleConversation({ id, me }: { id: string; me: Employee }) {
     if (input.trim()) void act("message", input);
   }
 
-  if (!data) return error ? <div className="p-6 text-[13.5px] text-danger-text">{error}</div> : <Skeleton />;
+  if (!data) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        {error ? <span className="text-[13.5px] text-danger-text">{error}</span> : <Spinner label="Abrindo conversa…" />}
+      </div>
+    );
+  }
   const { conversation: c, employee, analyst, tickets, ticketsError } = data;
   const name = employee?.name ?? c.employeeId;
   const first = name.split(" ")[0];
@@ -224,41 +230,3 @@ function Btn({ tone = "outline", children, ...rest }: { tone?: "primary" | "outl
   );
 }
 
-/** Esqueleto da conversa enquanto carrega. */
-function Skeleton() {
-  const bar = (w: string, h = "h-3") => <div className={`${h} ${w} animate-pulse rounded-md bg-ink/8`} />;
-  return (
-    <>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-rule bg-paper pl-5 pr-4">
-          <div className="h-10 w-10 animate-pulse rounded-full bg-ink/8" />
-          <div className="flex-1 space-y-2">
-            {bar("w-36", "h-3.5")}
-            {bar("w-52", "h-2.5")}
-          </div>
-          <div className="h-7 w-36 animate-pulse rounded-full bg-ink/8" />
-        </div>
-        <div className="flex-1 space-y-5 px-10 pt-8">
-          <div className="w-[380px] max-w-full space-y-2 rounded-[4px_12px_12px_12px] bg-paper p-3">{bar("w-full")}{bar("w-2/3")}</div>
-          <div className="ml-auto w-[420px] max-w-full space-y-2 rounded-[12px_4px_12px_12px] bg-agent-bubble p-3">{bar("w-full")}{bar("w-5/6")}{bar("w-1/2")}</div>
-          <div className="w-[300px] max-w-full space-y-2 rounded-[4px_12px_12px_12px] bg-paper p-3">{bar("w-3/4")}</div>
-          <div className="ml-auto w-[420px] max-w-full space-y-2 rounded-[12px_4px_12px_12px] bg-agent-bubble p-3">{bar("w-full")}{bar("w-2/3")}</div>
-        </div>
-        <div className="border-t border-rule bg-paper px-5 py-3.5">
-          <div className="h-11 animate-pulse rounded-xl bg-desk" />
-        </div>
-      </div>
-      <aside className="hidden w-[340px] shrink-0 flex-col border-l border-rule bg-paper xl:flex">
-        <div className="flex h-16 items-center border-b border-rule px-5">
-          <div className="space-y-2">{bar("w-40", "h-3.5")}{bar("w-28", "h-2.5")}</div>
-        </div>
-        <div className="space-y-3 px-5 pt-6">
-          {bar("w-24", "h-2.5")}
-          <div className="h-32 animate-pulse rounded-xl bg-desk" />
-          {bar("w-28", "h-2.5")}
-          {bar("w-full")}{bar("w-5/6")}{bar("w-2/3")}
-        </div>
-      </aside>
-    </>
-  );
-}
