@@ -5,7 +5,6 @@ import { AppShell } from "@/components/AppShell";
 import { TicketCard } from "@/components/Blocks";
 import * as tickets from "@/services/tickets";
 import * as conversations from "@/services/conversations";
-import { ConversationList } from "@/components/ConversationList";
 import type { TicketView } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -24,16 +23,28 @@ export default async function ChamadosPage() {
   const open = list?.filter((t) => t.open) ?? [];
   const closed = list?.filter((t) => !t.open) ?? [];
   const convs = conversations.listByEmployee(user.id).map(conversations.summarize);
-  // Clicar num chamado abre a conversa ligada a ele, se houver.
-  const convByTicket = new Map(convs.filter((c) => c.ticketId).map((c) => [c.ticketId!, c.id]));
+  // Clicar num chamado abre a conversa ligada a ele, se houver. Resposta nova do analista = borda azul.
+  const convByTicket = new Map(convs.filter((c) => c.ticketId).map((c) => [c.ticketId!, c]));
   const card = (t: TicketView) => {
-    const cid = convByTicket.get(t.id);
-    return cid ? (
-      <Link key={t.id} href={`/chat?c=${cid}`} className="block rounded-2xl transition hover:ring-2 hover:ring-primary/40">
+    const conv = convByTicket.get(t.id);
+    const unread = (conv?.unreadFromAnalyst ?? 0) > 0;
+    const muted = !t.open;
+    const inner = (
+      <div className={`relative rounded-2xl ${unread ? "ring-2 ring-primary" : ""} ${muted ? "opacity-60 grayscale-[.3]" : ""}`}>
+        {unread && (
+          <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-white">
+            {conv!.unreadFromAnalyst === 1 ? "1 resposta do analista" : `${conv!.unreadFromAnalyst} respostas do analista`}
+          </span>
+        )}
         <TicketCard ticket={t} />
+      </div>
+    );
+    return conv ? (
+      <Link key={t.id} href={`/chat?c=${conv.id}`} className="block rounded-2xl transition hover:ring-2 hover:ring-primary/40">
+        {inner}
       </Link>
     ) : (
-      <TicketCard key={t.id} ticket={t} />
+      <div key={t.id}>{inner}</div>
     );
   };
 
@@ -42,7 +53,10 @@ export default async function ChamadosPage() {
       user={user}
       crumb="Atendimento"
       status={
-        <Link href="/chat" className="flex h-9 items-center gap-1.5 rounded-lg bg-cta px-3.5 text-[13.5px] font-semibold text-white hover:bg-cta-hover">
+        <Link href="/chat" className="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-paper px-3 text-[13.5px] font-medium text-ink-2 hover:border-primary hover:bg-primary-soft hover:text-primary-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" />
+          </svg>
           Falar com o Nexo Assist
         </Link>
       }
@@ -58,8 +72,6 @@ export default async function ChamadosPage() {
             </p>
           </div>
 
-          <ConversationList items={convs} />
-
           {list !== null && list.length === 0 && (
             <div className="rounded-2xl border border-line-card bg-paper p-8 text-center">
               <p className="text-[15.5px] font-semibold">Você ainda não tem chamados.</p>
@@ -70,18 +82,7 @@ export default async function ChamadosPage() {
             </div>
           )}
 
-          {open.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-[12.5px] font-semibold text-ink-3">Em aberto</h2>
-              {open.map(card)}
-            </section>
-          )}
-          {closed.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-[12.5px] font-semibold text-ink-3">Encerrados</h2>
-              {closed.map(card)}
-            </section>
-          )}
+          {list && list.length > 0 && <div className="space-y-3">{[...open, ...closed].map(card)}</div>}
         </div>
       </main>
     </AppShell>

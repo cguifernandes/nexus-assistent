@@ -168,7 +168,7 @@ export default function LoginPage() {
               <label className="flex flex-col gap-2">
                 <span className="flex items-center justify-between text-[13.5px] font-medium">
                   Senha
-                  <a href="/perfil" className="text-primary-text">
+                  <a href="/profile" className="text-primary-text">
                     Esqueci minha senha
                   </a>
                 </span>

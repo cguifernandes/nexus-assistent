@@ -14,8 +14,8 @@ export function AppShell({ user, crumb, status, children }: { user: Employee; cr
     user.role === "analyst"
       ? [{ href: "/console", label: "Conversas", icon: <IconChat />, match: ["/console"] }]
       : [
-          { href: "/chamados", label: "Atendimento", icon: <IconChat />, match: ["/chamados", "/chat"] },
-          { href: "/perfil", label: "Meu perfil", icon: <IconUser />, match: ["/perfil"] },
+          { href: "/tickets", label: "Atendimento", icon: <IconChat />, match: ["/tickets", "/chat"] },
+          { href: "/profile", label: "Meu perfil", icon: <IconUser />, match: ["/profile"] },
         ];
   return (
     <div className="flex h-dvh">

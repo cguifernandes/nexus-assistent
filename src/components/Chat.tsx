@@ -131,7 +131,7 @@ export function Chat({ user, initialId }: { user: Employee; initialId?: string }
       crumb="Atendimento"
       status={
         <>
-          <Link href="/chamados" className="text-[13.5px] font-medium text-ink-2 hover:text-primary-text">
+          <Link href="/tickets" className="text-[13.5px] font-medium text-ink-2 hover:text-primary-text">
             Minhas conversas
           </Link>
           <button type="button" onClick={newConversation} className="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-paper px-3 text-[13.5px] font-medium text-ink-2 hover:border-primary hover:bg-primary-soft hover:text-primary-text">
