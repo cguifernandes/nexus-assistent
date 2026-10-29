@@ -142,9 +142,9 @@ export const fmtDate = (iso: string): string =>
 
 export function Spinner({ label }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 text-[13.5px] text-ink-3">
-      <span className="h-3 w-3 animate-spin rounded-full border-2 border-rule border-t-cta" />
-      {label}
+    <span className="flex items-center gap-2 text-[13.5px] leading-[1.5] text-ink-3">
+      <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-rule border-t-cta" />
+      {label && <span className="leading-[22px]">{label}</span>}
     </span>
   );
 }
