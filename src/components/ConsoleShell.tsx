@@ -87,7 +87,7 @@ export function ConsoleShell({ user, children }: { user: Employee; children: Rea
     .filter((i) => !q || `${i.employee} ${i.ticketId ?? ""} ${i.lastMessage}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <AppShell user={user} crumb="Console do analista" status={<DotPill tone="success">Disponível</DotPill>}>
+    <AppShell user={user} crumb="Conversas" status={<DotPill tone="success">Disponível</DotPill>}>
       <div className="flex min-h-0 flex-1">
 
       <aside className="flex w-[340px] shrink-0 flex-col border-r border-rule">
