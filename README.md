@@ -55,7 +55,7 @@ Três camadas, cada uma só fala com a de baixo:
 
 **Tempo real.** O envio de mensagem responde em Server-Sent Events: `step` (ação do agent, vira o chip acima da resposta), `text` (delta do texto), `block` (card) e `done`. Mensagens do analista e mudanças de status chegam por polling curto (3 s quando a conversa está com analista, 8 s com o agent).
 
-**Sessão.** Cookie httpOnly assinado com HMAC (`SESSION_SECRET`), só com o id do funcionário. Toda rota lê o usuário do cookie; as rotas do console exigem `role: analyst`. Chamados nunca são filtrados no cliente: o filtro por funcionário está no serviço.
+**Sessão.** Login emite um JWT (HS256 via `jose`, `sub` = id do funcionário, `iat`, `exp`) guardado em cookie `httpOnly`, `sameSite: lax`, `secure` em produção. Toda requisição à API verifica assinatura e expiração em `currentUser`; token inválido ou vencido devolve 401 (ou redireciona ao login nas páginas). Validade padrão de 8 h (`SESSION_TTL_SECONDS`), renovada a cada chamada de API quando passou da metade do prazo (sessão deslizante). `SESSION_SECRET` é obrigatório em produção. As rotas do console exigem `role: analyst`. Chamados nunca são filtrados no cliente: o filtro por funcionário está no serviço.
 
 ## Como o agent decide
 

@@ -3,7 +3,7 @@ import { _setDb } from "@/lib/db";
 import { seed } from "@/lib/seed";
 import * as tickets from "@/services/tickets";
 import * as helpcenter from "@/services/helpcenter";
-import { decodeSession, encodeSession } from "@/lib/auth";
+import { signSession, verifySession } from "@/lib/auth";
 
 process.env.TICKET_OUTAGE_RATE = "0";
 
@@ -95,13 +95,14 @@ describe("central de ajuda", () => {
   });
 });
 
-describe("sessão assinada", () => {
-  it("aceita token válido e rejeita adulterado", () => {
-    const tok = encodeSession("e1");
-    expect(decodeSession(tok)).toBe("e1");
-    const [payload, sig] = tok.split(".");
-    const forged = Buffer.from(JSON.stringify({ employeeId: "a1" })).toString("base64url");
-    expect(decodeSession(`${forged}.${sig}`)).toBeUndefined();
-    expect(decodeSession(`${payload}.x`)).toBeUndefined();
+describe("sessão JWT", () => {
+  it("aceita token válido e rejeita adulterado ou vencido", async () => {
+    const tok = await signSession("e1");
+    expect((await verifySession(tok))?.employeeId).toBe("e1");
+    const [h, , sig] = tok.split(".");
+    const forged = Buffer.from(JSON.stringify({ sub: "a1", exp: 9e9 })).toString("base64url");
+    expect(await verifySession(`${h}.${forged}.${sig}`)).toBeUndefined();
+    expect(await verifySession(await signSession("e1", -10))).toBeUndefined();
+    expect(await verifySession(undefined)).toBeUndefined();
   });
 });
