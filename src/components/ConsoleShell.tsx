@@ -55,6 +55,7 @@ export function ConsoleShell({ user, selectedId, children }: { user: Employee; s
   const [q, setQ] = useState("");
   const [items, setItems] = useState<ConversationItem[]>();
   const [error, setError] = useState<string>();
+  const [menu, setMenu] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -106,22 +107,40 @@ export function ConsoleShell({ user, selectedId, children }: { user: Employee; s
           </svg>
         </Link>
         <div className="flex-1" />
-        <button
-          type="button"
-          title="Sair"
-          onClick={async () => {
-            await fetch("/api/auth", { method: "DELETE" });
-            router.push("/login");
-          }}
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-ink-3 hover:bg-paper"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M10 17l5-5-5-5M15 12H3M21 3v18" />
-          </svg>
-        </button>
-        <Link href="/perfil" title={`${user.name} · Meu perfil`}>
-          <Avatar name={user.name} size={36} online />
-        </Link>
+        <div className="relative">
+          <button type="button" onClick={() => setMenu((m) => !m)} aria-haspopup="menu" aria-expanded={menu} title={user.name} className="rounded-full">
+            <Avatar name={user.name} size={36} online />
+          </button>
+          {menu && (
+            <>
+              <button type="button" aria-label="Fechar menu" onClick={() => setMenu(false)} className="fixed inset-0 z-10 cursor-default" />
+              <div role="menu" className="absolute bottom-0 left-12 z-20 w-60 rounded-xl border border-line-card bg-paper p-1.5 shadow-[0_8px_24px_-8px_rgba(27,36,49,.3)]">
+                <div className="flex items-center gap-2.5 px-2 pb-2 pt-1.5">
+                  <Avatar name={user.name} />
+                  <div className="min-w-0 leading-tight">
+                    <div className="truncate text-[13.5px] font-semibold">{user.name}</div>
+                    <div className="truncate text-[11.5px] text-ink-3">{user.email}</div>
+                  </div>
+                </div>
+                <div className="border-t border-rule pt-1.5">
+                  <MenuItem href="/perfil">Meu perfil</MenuItem>
+                  <MenuItem href="/chamados">Meu atendimento</MenuItem>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={async () => {
+                      await fetch("/api/auth", { method: "DELETE" });
+                      router.push("/login");
+                    }}
+                    className="flex h-9 w-full items-center rounded-lg px-2.5 text-left text-[13.5px] font-medium text-ink-2 hover:bg-desk"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </aside>
 
       <aside className="hidden w-[380px] shrink-0 flex-col border-r border-rule lg:flex">
@@ -182,5 +201,13 @@ export function ConsoleShell({ user, selectedId, children }: { user: Employee; s
 
       <section className="flex min-w-0 flex-1 bg-desk-2">{children}</section>
     </div>
+  );
+}
+
+function MenuItem({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} role="menuitem" className="flex h-9 items-center rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
+      {children}
+    </Link>
   );
 }
