@@ -125,4 +125,24 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 
 ## Deploy
 
-Não publiquei. O armazenamento em arquivo precisa de disco persistente (Fly.io/Railway com volume); em Vercel seria necessário trocar `lib/db.ts` por um banco. Antes de expor publicamente: rate limit por sessão, limite diário de tokens e `SESSION_SECRET` forte.
+A aplicação guarda tudo em um arquivo JSON, então precisa de **disco persistente**. Railway, Render e Fly.io têm volumes; na Vercel o disco é efêmero e os dados somem a cada deploy (lá seria preciso trocar `lib/db.ts` por um banco).
+
+Passo a passo (Railway ou Render, com Node 22):
+
+1. Crie o serviço a partir do repositório. Build: `npm ci && npm run build`. Start: `npm start`. O `.npmrc` do projeto já usa `legacy-peer-deps`, necessário para o vitest.
+2. Monte um volume (ex.: em `/data`) e aponte `DATA_FILE=/data/db.json`.
+3. Variáveis de ambiente obrigatórias:
+
+| Variável | Valor |
+|---|---|
+| `ANTHROPIC_API_KEY` | chave `sk-ant-...` do Console da Anthropic (não a assinatura do Claude Code) |
+| `SESSION_SECRET` | string longa e aleatória; sem ela a aplicação não sobe em produção |
+| `ADMIN_PASSWORD` | senha da conta admin@nexo.com |
+| `DATA_FILE` | caminho no volume, ex. `/data/db.json` |
+| `NODE_ENV` | `production` (as plataformas já definem) |
+
+   Opcionais: `LLM_MODEL` (padrão `anthropic/claude-opus-5-5`; `anthropic/claude-haiku-5-5` é mais barato), `SESSION_TTL_SECONDS`, `AGENT_MSGS_PER_MINUTE`, `AGENT_MSGS_PER_DAY`, `TICKET_OUTAGE_RATE` (use `0.05` ou `0` em produção para a instabilidade simulada não atrapalhar os testes).
+
+4. Proteção da chave e do custo: além dos limites por usuário da aplicação, defina um limite de gasto mensal para a chave no Console da Anthropic. O cookie de sessão é `secure` em produção, então o serviço precisa estar atrás de HTTPS (padrão nessas plataformas).
+
+**Zerar os dados**: apague o `db.json` (localmente `data/db.json`; no volume, o caminho de `DATA_FILE`) e reinicie o serviço. Ele é recriado a partir de `src/lib/seed.ts` com as duas contas e os chamados de exemplo do admin.
