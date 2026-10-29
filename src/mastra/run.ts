@@ -2,6 +2,7 @@ import { RequestContext } from "@mastra/core/request-context";
 import { mastra } from "./index";
 import { MODEL } from "./agent";
 import { TOOL_LABELS } from "./tools";
+import { markAgentDown } from "./ready";
 import * as conversations from "@/services/conversations";
 import type { Block, Conversation, ConversationStatus, Decision, Employee, Message, TraceStep } from "@/lib/types";
 
@@ -33,6 +34,19 @@ function dynamicSystem(conv: Conversation, employee: Employee): string {
 /** Roda um turno do agent e emite eventos para o cliente. Persiste a resposta ao final. */
 export async function runAgent(conv: Conversation, employee: Employee, emit: (e: AgentEvent) => void): Promise<void> {
   if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY não configurada no .env");
+  try {
+    await runTurn(conv, employee, emit);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/x-api-key|authentication|401/i.test(msg)) {
+      markAgentDown("ANTHROPIC_API_KEY foi recusada pelo provedor (chave inválida).");
+      throw new Error("a chave do provedor de IA foi recusada. Confira ANTHROPIC_API_KEY no .env.");
+    }
+    throw e;
+  }
+}
+
+async function runTurn(conv: Conversation, employee: Employee, emit: (e: AgentEvent) => void): Promise<void> {
 
   const started = Date.now();
   // ponytail: histórico só de texto (últimas 24 msgs); cards/ferramentas não são reenviados.

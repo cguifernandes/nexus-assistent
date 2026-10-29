@@ -15,15 +15,15 @@ export function Chat({ user }: { user: Employee }) {
   const [streaming, setStreaming] = useState<Streaming | null>(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string>();
-  const [agentReady, setAgentReady] = useState(true);
+  const [agent, setAgent] = useState<{ ok: boolean; reason?: string }>({ ok: true });
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async (id?: string) => {
     const url = id ? `/api/conversations/${id}` : "/api/conversations";
-    const data = await api<{ conversation: Conversation; agentReady: boolean }>(url);
+    const data = await api<{ conversation: Conversation; agent: { ok: boolean; reason?: string } }>(url);
     setConv(data.conversation);
-    setAgentReady(data.agentReady);
+    setAgent(data.agent);
   }, []);
 
   useEffect(() => {
@@ -136,8 +136,8 @@ export function Chat({ user }: { user: Employee }) {
             </svg>
             Nova conversa
           </button>
-          {conv && conv.status === "agent" && !agentReady ? (
-            <span title="O assistente não está disponível: a configuração do provedor de IA não está correta. Confira ANTHROPIC_API_KEY no .env e reinicie a aplicação." className="cursor-help">
+          {conv && conv.status === "agent" && !agent.ok ? (
+            <span title={`O assistente não está disponível: a configuração do provedor de IA não está correta. ${agent.reason ?? ""} Corrija o .env e reinicie a aplicação.`} className="cursor-help">
               <DotPill tone="danger">Assistente offline</DotPill>
             </span>
           ) : (
