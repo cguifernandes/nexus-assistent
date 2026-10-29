@@ -108,14 +108,20 @@ export function ConsoleShell({ user, selectedId, children }: { user: Employee; s
         <div className="flex-1" />
         <button
           type="button"
-          title={`${user.name} · Sair`}
+          title="Sair"
           onClick={async () => {
             await fetch("/api/auth", { method: "DELETE" });
             router.push("/login");
           }}
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-ink-3 hover:bg-paper"
         >
-          <Avatar name={user.name} size={36} online />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M10 17l5-5-5-5M15 12H3M21 3v18" />
+          </svg>
         </button>
+        <Link href="/perfil" title={`${user.name} · Meu perfil`}>
+          <Avatar name={user.name} size={36} online />
+        </Link>
       </aside>
 
       <aside className="hidden w-[380px] shrink-0 flex-col border-r border-rule lg:flex">

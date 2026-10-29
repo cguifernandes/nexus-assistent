@@ -8,7 +8,7 @@ export default async function PerfilPage() {
   return (
     <AppShell user={user} crumb="Meu perfil">
       <main className="flex-1 overflow-y-auto px-10 py-12">
-        <div className="w-[600px] max-w-full space-y-8">
+        <div className="mx-auto w-[600px] max-w-full space-y-8">
           <div className="space-y-1.5">
             <h1 className="text-2xl font-bold">Meu perfil</h1>
             <p className="text-[14.5px] text-ink-3">Seus dados de acesso ao service desk de TI.</p>
