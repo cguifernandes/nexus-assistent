@@ -223,11 +223,12 @@ export default function LoginPage() {
               {isSubmitting ? "Entrando…" : "Entrar"}
               {!isSubmitting && <Icon name="arrow" />}
             </button>
+
+            <div className="rounded-lg border border-line bg-desk px-4 py-3 font-mono text-[12.5px] text-ink-2">
+              <p>teste@nexo.com · teste123 <span className="text-ink-3">(funcionário)</span></p>
+              <p>assistente@nexo.com · assistente123 <span className="text-ink-3">(analista)</span></p>
+            </div>
           </form>
-          <div className="mt-5 rounded-lg border border-line bg-desk px-4 py-3 font-mono text-[12.5px] text-ink-2">
-            <p>teste@nexo.com · teste123 <span className="text-ink-3">(funcionário)</span></p>
-            <p>assistente@nexo.com · assistente123 <span className="text-ink-3">(analista)</span></p>
-          </div>
         </div>
 
         <div className="flex items-center justify-between text-[12.5px] text-ink-3">
