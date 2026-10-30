@@ -2,6 +2,8 @@
 
 Chat em que o funcionário da Nexo descreve o problema com as próprias palavras e o agent consulta os chamados dele, busca na central de ajuda, abre ou atualiza chamados (sempre com rascunho e confirmação) e transfere para um analista quando precisa. Inclui o console do analista e a visibilidade completa das decisões do agent em cada resposta.
 
+OBS: Tentei deixar o design o mais parecido com o documento porém adicionei algumas telas novas
+
 ## Como rodar
 
 ```bash
@@ -129,29 +131,3 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 - **Limites por usuário** (`lib/ratelimit.ts`): 10 mensagens ao assistente por minuto e 150 por dia, configuráveis por `AGENT_MSGS_PER_MINUTE` e `AGENT_MSGS_PER_DAY`; além disso cada conversa tem no máximo 30 mensagens, cada mensagem 2000 caracteres, e cada resposta do agent no máximo 8 passos e 1200 tokens de saída. Os contadores ficam em memória (um processo); com mais de uma instância, mova para Redis ou banco.
 - **Prompt injection**: as regras que importam não dependem do modelo obedecer. A identidade vem do cookie e entra nas ferramentas pelo `RequestContext`, nunca do texto; `applyDraft` recusa sem confirmação direta; posse de chamado, janela de reabertura e pausa do agent são verificadas no serviço. As instruções ainda mandam o agent tratar mensagens, artigos e resultados de ferramentas como dados, recusar troca de papel ou de regras, e não revelar o prompt. O pior caso de uma injeção bem-sucedida é uma resposta de texto errada, visível no trace, nunca uma ação fora das regras.
 
-## Deploy
-
-Publicado na **Vercel**, só para avaliação. Dois cuidados por causa do armazenamento em arquivo:
-
-- Na Vercel o sistema de arquivos do projeto é somente leitura, então o `db.json` vai para `/tmp` (automático quando a variável `VERCEL` existe). Esse disco é por instância da função e some quando ela recicla: **os dados podem ser zerados a qualquer momento**, e duas instâncias podem ver dados diferentes. Para o teste da vaga isso é aceitável; para uso real, trocar `lib/db.ts` por um banco (Vercel Postgres, Turso etc.).
-- Os limites por usuário e o cache da verificação da chave também são por instância.
-
-Configuração na Vercel:
-
-1. Importe o repositório. O framework Next.js é detectado; o `.npmrc` cuida do `legacy-peer-deps`; Node 22 vem de `engines` no `package.json`.
-2. Variáveis de ambiente (Settings → Environment Variables):
-
-| Variável | Valor |
-|---|---|
-| `ANTHROPIC_API_KEY` | chave `sk-ant-...` do Console da Anthropic (não a assinatura do Claude Code) |
-| `SESSION_SECRET` | string longa e aleatória; sem ela a aplicação não sobe em produção |
-| `TICKET_OUTAGE_RATE` | `0` ou `0.05`, para a instabilidade simulada não atrapalhar quem testa |
-
-   Opcionais: `LLM_MODEL` (padrão `anthropic/claude-opus-5-5`; `anthropic/claude-haiku-5-5` é mais barato), `SESSION_TTL_SECONDS`, `AGENT_MSGS_PER_MINUTE`, `AGENT_MSGS_PER_DAY`.
-
-3. A rota de mensagens declara `maxDuration = 60`, porque um turno do agent leva de 5 a 15 s e o padrão da Vercel cortaria o stream.
-4. Custo: além dos limites por usuário da aplicação, defina um limite de gasto mensal para a chave no Console da Anthropic. O cookie de sessão é `secure` em produção; a Vercel já serve em HTTPS.
-
-Em plataformas com volume (Railway, Render, Fly.io) o mesmo código persiste de verdade: monte o volume e aponte `DATA_FILE` para ele.
-
-**Zerar os dados**: localmente, apague `data/db.json` e reinicie; na Vercel, um novo deploy (ou a reciclagem natural das funções) recria tudo a partir de `src/lib/seed.ts`, com as duas contas e os chamados de exemplo do assistente.
