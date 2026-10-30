@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { isResponse, json, requireUser } from "@/lib/api";
 import type { ConversationStatus } from "@/lib/types";
 import * as conversations from "@/services/conversations";
+import * as tickets from "@/services/tickets";
 
 const STATUSES: ConversationStatus[] = ["agent", "waiting_analyst", "with_analyst", "closed"];
 
@@ -23,6 +24,7 @@ export async function GET(req: Request) {
     hadAnalyst: c.messages.some((m) => m.role === "analyst") || !!c.analystId || !!c.transferReason,
     summary: c.summary,
     ticketId: c.ticketId,
+    ticketOpen: c.ticketId ? tickets.getForEmployee(c.ticketId, c.employeeId)?.open : undefined,
     lastConfidence: [...c.messages].reverse().find((m) => m.trace?.decision)?.trace?.decision?.confidence,
     lastMessage: c.messages.at(-1)?.content ?? "",
     lastRole: c.messages.at(-1)?.role,

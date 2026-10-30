@@ -18,6 +18,8 @@ export interface ConversationItem {
   /** Passou por analista (transferida ou respondida por humano). */
   hadAnalyst: boolean;
   ticketId?: string;
+  /** false = o chamado da conversa já foi resolvido. */
+  ticketOpen?: boolean;
   lastConfidence?: number;
   lastMessage: string;
   lastRole?: string;
@@ -36,6 +38,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 /** Linha de contexto de cada conversa, como no protótipo ("Transferida · INC-20311"). */
 export function itemTag(c: ConversationItem, meId: string): { text: string; cls: string } {
+  if (c.ticketId && c.ticketOpen === false) return { text: `Chamado resolvido · ${c.ticketId}`, cls: "text-success-text" };
   switch (c.status) {
     case "waiting_analyst":
       if (c.transferReason === "sem_seguranca") {

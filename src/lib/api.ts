@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "./auth";
+import { flush } from "./db";
 import type { Employee, Role } from "./types";
 
-export const json = (body: unknown, status = 200): NextResponse => NextResponse.json(body, { status });
+/** Resposta JSON; antes, espera as gravações pendentes terminarem (ver lib/db.ts). */
+export async function json(body: unknown, status = 200): Promise<NextResponse> {
+  await flush();
+  return NextResponse.json(body, { status });
+}
 
 /** Devolve o usuário logado ou uma resposta de erro pronta. */
 export async function requireUser(role?: Role): Promise<Employee | NextResponse> {

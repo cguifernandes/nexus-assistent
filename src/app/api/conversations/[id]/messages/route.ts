@@ -1,4 +1,5 @@
 import { isResponse, json, requireUser } from "@/lib/api";
+import { flush } from "@/lib/db";
 import { MAX_USER_MESSAGES } from "@/lib/types";
 import * as conversations from "@/services/conversations";
 import { runAgent, type AgentEvent } from "@/mastra/run";
@@ -48,6 +49,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         conversations.addMessage(conv, { role: "system", content: `O agent não conseguiu responder: ${msg}` });
         emit({ type: "error", message: msg });
       } finally {
+        await flush();
         controller.close();
       }
     },

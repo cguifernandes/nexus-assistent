@@ -61,14 +61,22 @@ export function db(): DB {
   return g.__nexoDb;
 }
 
+const p = globalThis as unknown as { __nexoPending?: Promise<unknown> };
+
+/** Espera a última gravação terminar. Chamado antes de responder, para o próximo GET (em outra instância) já ver a mudança. */
+export async function flush(): Promise<void> {
+  await p.__nexoPending;
+}
+
 export function save(): void {
   if (REDIS_URL && REDIS_TOKEN) {
-    const write = redis(`set/${REDIS_KEY}`, JSON.stringify(g.__nexoDb)).catch((e) => console.error(e));
-    // after() mantém a função viva até a gravação terminar; fora de uma requisição (testes) só dispara.
+    // ponytail: o blob inteiro é gravado; uma requisição longa (turno do agent, ~10 s) pode sobrescrever
+    // uma mudança feita nesse meio tempo por outra instância. Chaves por conversa resolveriam.
+    p.__nexoPending = redis(`set/${REDIS_KEY}`, JSON.stringify(g.__nexoDb)).catch((e) => console.error(e));
     try {
-      after(write);
+      after(p.__nexoPending); // garante a gravação mesmo se alguém responder sem flush()
     } catch {
-      /* fora do contexto de requisição */
+      /* fora do contexto de requisição (testes) */
     }
     return;
   }
