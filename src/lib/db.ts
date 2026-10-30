@@ -15,8 +15,13 @@ const FILE = path.resolve(process.env.DATA_FILE ?? path.join(process.cwd(), "dat
 
 // Redis via REST (Upstash / Vercel KV). Na Vercel cada rota pode rodar numa instância diferente,
 // com /tmp e memória próprios, então o arquivo local não serve: o JSON inteiro vai para uma chave.
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+// A integração da Vercel deixa o prefixo a escolha (UPSTASH_REDIS_REST_URL, KV_REST_API_URL, MEUPREFIXO_REST_API_URL...).
+const envBy = (re: RegExp): string | undefined => Object.entries(process.env).find(([k]) => re.test(k))?.[1];
+const REDIS_URL = envBy(/(REDIS_REST_URL|REST_API_URL)$/);
+const REDIS_TOKEN = envBy(/(REDIS_REST_TOKEN|REST_API_TOKEN)$/);
+if (process.env.VERCEL && !(REDIS_URL && REDIS_TOKEN)) {
+  throw new Error("Na Vercel é preciso conectar um Upstash Redis ao projeto (Storage) e fazer redeploy; sem ele não há onde gravar os dados.");
+}
 const REDIS_KEY = "nexo-db";
 
 // ponytail: one JSON blob, written whole on every mutation, last write wins between instances.
