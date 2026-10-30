@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { after } from "next/server";
 import type { Conversation, Employee, Ticket } from "./types";
 import { seed } from "./seed";
 
@@ -10,13 +11,38 @@ export interface DB {
   counters: { INC: number; REQ: number; conv: number };
 }
 
-// Na Vercel o projeto é somente leitura; só /tmp aceita escrita (e some quando a função recicla).
-const DEFAULT_FILE = process.env.VERCEL ? "/tmp/nexo-db.json" : path.join(process.cwd(), "data", "db.json");
-const FILE = path.resolve(process.env.DATA_FILE ?? DEFAULT_FILE);
+const FILE = path.resolve(process.env.DATA_FILE ?? path.join(process.cwd(), "data", "db.json"));
 
-// ponytail: single JSON file, written whole on every mutation. Fine for one process;
-// swap for SQLite/Postgres when there is more than one instance or >10k tickets.
+// Redis via REST (Upstash / Vercel KV). Na Vercel cada rota pode rodar numa instância diferente,
+// com /tmp e memória próprios, então o arquivo local não serve: o JSON inteiro vai para uma chave.
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+const REDIS_KEY = "nexo-db";
+
+// ponytail: one JSON blob, written whole on every mutation, last write wins between instances.
+// Swap for Postgres when there is more than one analyst working at the same time or >10k tickets.
 const g = globalThis as unknown as { __nexoDb?: DB };
+
+async function redis(cmd: string, body?: string): Promise<string | null> {
+  const res = await fetch(`${REDIS_URL}/${cmd}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+    body,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Redis ${cmd.split("/")[0]}: HTTP ${res.status}`);
+  return ((await res.json()) as { result: string | null }).result;
+}
+
+/** Carrega o estado atual antes de atender uma requisição. Sem Redis, usa o cache em memória + arquivo. */
+export async function load(): Promise<DB> {
+  if (REDIS_URL && REDIS_TOKEN) {
+    const raw = await redis(`get/${REDIS_KEY}`);
+    g.__nexoDb = raw ? (JSON.parse(raw) as DB) : seed();
+    if (!raw) await redis(`set/${REDIS_KEY}`, JSON.stringify(g.__nexoDb));
+  }
+  return db();
+}
 
 export function db(): DB {
   if (!g.__nexoDb) {
@@ -31,6 +57,16 @@ export function db(): DB {
 }
 
 export function save(): void {
+  if (REDIS_URL && REDIS_TOKEN) {
+    const write = redis(`set/${REDIS_KEY}`, JSON.stringify(g.__nexoDb)).catch((e) => console.error(e));
+    // after() mantém a função viva até a gravação terminar; fora de uma requisição (testes) só dispara.
+    try {
+      after(write);
+    } catch {
+      /* fora do contexto de requisição */
+    }
+    return;
+  }
   fs.mkdirSync(path.dirname(FILE), { recursive: true });
   fs.writeFileSync(FILE, JSON.stringify(g.__nexoDb, null, 2));
 }

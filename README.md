@@ -109,7 +109,7 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 
 ## Trade-offs
 
-- **JSON em disco em vez de banco.** Atende “sobreviver a reinício” com zero dependências; não serve para mais de um processo nem para disco efêmero (ver Deploy). Trocar por SQLite/Postgres é mexer só em `lib/db.ts`.
+- **JSON em disco em vez de banco.** Atende “sobreviver a reinício” com zero dependências; com várias instâncias (Vercel) o mesmo JSON vai para uma chave no Redis (ver Deploy). Trocar por SQLite/Postgres é mexer só em `lib/db.ts`.
 - **Serviço de chamados em processo, não um servidor separado.** A fronteira é um módulo com API própria e simulação de indisponibilidade; virar um HTTP service é só trocar a implementação das funções. Evita rodar dois processos para avaliar.
 - **Polling para o analista, SSE só para o agent.** Simples e suficiente para o volume do protótipo; WebSocket/SSE bidirecional seria o próximo passo.
 - **Histórico só de texto.** Cards e resultados de ferramentas não voltam para o modelo (economia de tokens). O rascunho pendente é reinjetado no contexto para o agent saber o que está esperando confirmação.
@@ -131,3 +131,30 @@ O mesmo trace aparece no console do analista, que também vê o resumo que o age
 - **Limites por usuário** (`lib/ratelimit.ts`): 10 mensagens ao assistente por minuto e 150 por dia, configuráveis por `AGENT_MSGS_PER_MINUTE` e `AGENT_MSGS_PER_DAY`; além disso cada conversa tem no máximo 30 mensagens, cada mensagem 2000 caracteres, e cada resposta do agent no máximo 8 passos e 1200 tokens de saída. Os contadores ficam em memória (um processo); com mais de uma instância, mova para Redis ou banco.
 - **Prompt injection**: as regras que importam não dependem do modelo obedecer. A identidade vem do cookie e entra nas ferramentas pelo `RequestContext`, nunca do texto; `applyDraft` recusa sem confirmação direta; posse de chamado, janela de reabertura e pausa do agent são verificadas no serviço. As instruções ainda mandam o agent tratar mensagens, artigos e resultados de ferramentas como dados, recusar troca de papel ou de regras, e não revelar o prompt. O pior caso de uma injeção bem-sucedida é uma resposta de texto errada, visível no trace, nunca uma ação fora das regras.
 
+
+## Deploy
+
+Publicado na **Vercel**, só para avaliação. Na Vercel cada rota pode rodar numa instância diferente, com disco e memória próprios, então o `db.json` em arquivo não serve (a conversa criada numa instância não existe na outra). Em produção o mesmo JSON vai inteiro para uma chave num **Redis** (Upstash, pelo Marketplace da Vercel, plano grátis), lido no início de cada requisição e gravado a cada mudança. Última gravação vence; para uso real, trocar `lib/db.ts` por um banco.
+
+Configuração na Vercel:
+
+1. Importe o repositório. O framework Next.js é detectado; o `.npmrc` cuida do `legacy-peer-deps`; Node 22 vem de `engines` no `package.json`.
+2. Em Storage, crie um banco **Upstash Redis** e conecte ao projeto. Isso define `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` sozinho (`KV_REST_API_URL`/`KV_REST_API_TOKEN` também são aceitos).
+3. Variáveis de ambiente (Settings → Environment Variables):
+
+| Variável | Valor |
+|---|---|
+| `ANTHROPIC_API_KEY` | chave `sk-ant-...` do Console da Anthropic (não a assinatura do Claude Code) |
+| `SESSION_SECRET` | string longa e aleatória; sem ela a aplicação não sobe em produção |
+| `TICKET_OUTAGE_RATE` | `0` ou `0.05`, para a instabilidade simulada não atrapalhar quem testa |
+
+   Opcionais: `LLM_MODEL` (padrão `anthropic/claude-opus-5-5`; `anthropic/claude-haiku-5-5` é mais barato), `SESSION_TTL_SECONDS`, `AGENT_MSGS_PER_MINUTE`, `AGENT_MSGS_PER_DAY`.
+
+4. A rota de mensagens declara `maxDuration = 60`, porque um turno do agent leva de 5 a 15 s e o padrão da Vercel cortaria o stream.
+5. Custo: além dos limites por usuário da aplicação, defina um limite de gasto mensal para a chave no Console da Anthropic. O cookie de sessão é `secure` em produção; a Vercel já serve em HTTPS.
+
+Os limites por usuário e o cache da verificação da chave continuam em memória, por instância.
+
+Em plataformas com volume (Railway, Render, Fly.io) basta não definir as variáveis do Redis: o código volta ao arquivo, e `DATA_FILE` aponta para o volume.
+
+**Zerar os dados**: localmente, apague `data/db.json` e reinicie; na Vercel, apague a chave `nexo-db` no console do Upstash (ou `redis-cli DEL nexo-db`). A próxima requisição recria tudo a partir de `src/lib/seed.ts`, com as duas contas e os chamados de exemplo do assistente.

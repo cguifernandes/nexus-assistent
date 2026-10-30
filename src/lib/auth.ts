@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { db } from "./db";
+import { load } from "./db";
 import { verifyPassword } from "./password";
 import type { Employee } from "./types";
 
@@ -52,7 +52,7 @@ async function write(token: string): Promise<void> {
 export async function currentUser(): Promise<Employee | undefined> {
   const session = await verifySession((await cookies()).get(COOKIE)?.value);
   if (!session) return undefined;
-  const user = db().employees.find((e) => e.id === session.employeeId);
+  const user = (await load()).employees.find((e) => e.id === session.employeeId);
   if (!user) return undefined;
   if (session.exp - Date.now() / 1000 < SESSION_TTL / 2) {
     // Server Components não podem gravar cookie; a renovação acontece na próxima chamada de API.
@@ -69,9 +69,9 @@ export async function clearSessionCookie(): Promise<void> {
   (await cookies()).delete(COOKIE);
 }
 
-export function findByEmail(email: string): Employee | undefined {
+export async function findByEmail(email: string): Promise<Employee | undefined> {
   const e = email.trim().toLowerCase();
-  return db().employees.find((x) => x.email === e);
+  return (await load()).employees.find((x) => x.email === e);
 }
 
 /** Confere a senha contra o hash scrypt do seed. */
